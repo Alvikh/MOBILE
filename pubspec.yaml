@@ -1,0 +1,56 @@
+name: ta_mobile
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  rename: ^3.0.2
+  http: ^1.4.0
+  shared_preferences: ^2.2.2
+  syncfusion_flutter_charts: ^29.2.10
+  intl: ^0.20.2
+  syncfusion_flutter_gauges: ^29.2.10
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  mqtt_client: ^10.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/LOGO.png
+
+  fonts:
+    - family: Inter24
+      fonts:
+        - asset: assets/fonts/Inter_24pt-ExtraBold.ttf
+          weight: 800
+
+    - family: Inter18
+      fonts:
+        - asset: assets/fonts/Inter_18pt-ExtraBold.ttf
+          weight: 800
+
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-ExtraBold.ttf
+          weight: 800
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/LOGO.png"
+  adaptive_icon_background: "#085085"
+  adaptive_icon_foreground: "assets/LOGO.png"
+
+flutter_launcher_name:
+  name: "PowerSmartIQ"
