@@ -12,9 +12,9 @@ dependencies:
   rename: ^3.0.2
   http: ^1.4.0
   shared_preferences: ^2.2.2
-  syncfusion_flutter_charts: ^29.2.10
+  syncfusion_flutter_charts: ^30.1.37
   intl: ^0.20.2
-  syncfusion_flutter_gauges: ^29.2.10
+  syncfusion_flutter_gauges: ^30.1.37
 
 dev_dependencies:
   flutter_test:
@@ -53,4 +53,4 @@ flutter_icons:
   adaptive_icon_foreground: "assets/LOGO.png"
 
 flutter_launcher_name:
-  name: "PowerSmartIQ"
+  name: "Smart Power Management"
