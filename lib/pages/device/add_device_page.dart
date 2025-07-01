@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/services/device_service.dart';
 import 'package:ta_mobile/widgets/custom_text_field.dart';
 
-class AddDevicePage extends StatefulWidget {
+class AddDevicePage extends ConsumerStatefulWidget {
   const AddDevicePage({Key? key}) : super(key: key);
 
   @override
-  _AddDevicePageState createState() => _AddDevicePageState();
+  ConsumerState<AddDevicePage> createState() => _AddDevicePageState();
 }
 
-class _AddDevicePageState extends State<AddDevicePage> {
+class _AddDevicePageState extends ConsumerState<AddDevicePage> {
   final _formKey = GlobalKey<FormState>();
-  final DeviceService _deviceService = DeviceService();
+
+  late final DeviceService _deviceService;
 
   // Form controllers
   final TextEditingController _nameController = TextEditingController();
@@ -29,6 +31,12 @@ class _AddDevicePageState extends State<AddDevicePage> {
     'Control Device',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _deviceService = DeviceService(ref);
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -39,13 +47,13 @@ class _AddDevicePageState extends State<AddDevicePage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2196F3), // header background
-              onPrimary: Colors.white, // header text
-              onSurface: Colors.black87, // body text
+              primary: Color(0xFF2196F3),
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2196F3), // button text
+                foregroundColor: const Color(0xFF2196F3),
               ),
             ),
           ),
@@ -87,6 +95,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
         type: _typeController.text,
         building: _buildingController.text,
         installationDate: _installationDate!,
+        status: 'active', // Add default status
       );
 
       await _deviceService.addDevice(newDevice);
@@ -108,7 +117,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to add device: $e'),
+            content: Text('Failed to add device: ${e.toString()}'),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -208,8 +217,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: Color(0xFF2196F3), width: 1.5),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF2196F3), width: 1.5),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       filled: true,
@@ -233,7 +242,9 @@ class _AddDevicePageState extends State<AddDevicePage> {
                     }).toList(),
                     onChanged: (value) {
                       if (value != null) {
-                        _typeController.text = value;
+                        setState(() {
+                          _typeController.text = value;
+                        });
                       }
                     },
                     validator: (value) {
@@ -279,8 +290,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Color(0xFF2196F3), width: 1.5),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF2196F3), width: 1.5),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         filled: true,
@@ -352,9 +363,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
               ),
             ),
           ),
-
-          // Floating Navbar
-          // const CustomFloatingNavbar(selectedIndex: 1),
         ],
       ),
     );

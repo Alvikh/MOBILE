@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/pages/home/home_page.dart';
+import 'package:ta_mobile/services/api_service.dart';
+import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
 
 import 'welcome_page.dart';
 
@@ -15,18 +17,38 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
+
     checkLoginStatus();
   }
 
   Future<void> checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
+    final isLoggedIn = await UserPreferencesService().isLoggedIn();
+    print(isLoggedIn);
     if (isLoggedIn) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
+      final user = await UserPreferencesService().getUser();
+      if (user != null) {
+        User() = user;
+        final authToken = await UserPreferencesService().getAuthToken();
+        if (authToken != null) {
+          await ApiService().setToken(authToken);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+          );
+        } else {
+          // Handle the case where authToken is null, e.g., log out or show error
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => WelcomePage()),
+          );
+        }
+      } else {
+        // Handle the case where user is null, e.g., log out or show error
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => WelcomePage()),
+        );
+      }
     } else {
       Navigator.pushReplacement(
         context,

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:ta_mobile/pages/auth/sign_in_page.dart';
+import 'package:ta_mobile/pages/home/home_page.dart';
+import 'package:ta_mobile/routes.dart';
 
 import 'pages/partial/splash_page.dart';
 
@@ -28,6 +31,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'PowerSmartIQ',
+      routes: {
+        AppRoutes.login: (context) => SignInPage(),
+        AppRoutes.home: (context) => HomePage(),
+      },
       home: SplashPage(), // ganti jadi SplashPage
     );
   }

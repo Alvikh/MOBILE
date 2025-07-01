@@ -65,26 +65,52 @@ class _MonitoringPageState extends State<MonitoringPage> {
     data.add(value);
     timeData.add(now);
   }
-
+String? _formatDouble(dynamic value) {
+  if (value == null) return null;
+  
+  final numValue = value is num ? value : double.tryParse(value.toString());
+  if (numValue == null) return null;
+  
+  return numValue.toStringAsFixed(2);
+}
   @override
   void initState() {
     super.initState();
     mqttService = MqttService(
-      broker: 'broker.hivemq.com', // Replace with your MQTT broker
       onMessageReceived: (data) {
         setState(() {
-          tanggal = data['tanggal'] ?? '-';
-          String fullWaktu = data['waktu'] ?? '-';
-          waktu = fullWaktu.length >= 5 ? fullWaktu.substring(0, 5) : fullWaktu;
+          final String measuredAt = data['measured_at'] ?? '';
 
-          voltage = data['tegangan']?.toString() ?? '-';
-          current = data['arus']?.toString() ?? '-';
-          power = data['daya']?.toString() ?? '-';
-          energy = data['energi']?.toString() ?? '-';
-          frequency = data['frequency']?.toString() ?? '-';
-          powerFactor = data['power_factor']?.toString() ?? '-';
-          temperature = data['suhu']?.toString() ?? '-';
-          humidity = data['kelembapan']?.toString() ?? '-';
+          if (measuredAt.isNotEmpty) {
+            try {
+              final parts = measuredAt.split(' ');
+              if (parts.length == 2) {
+                tanggal = parts[0]; // "30-06-2025"
+                waktu = parts[1].length >= 5
+                    ? parts[1].substring(0, 5)
+                    : parts[1]; // "19:33"
+              } else {
+                tanggal = '-';
+                waktu = '-';
+              }
+            } catch (e) {
+              tanggal = '-';
+              waktu = '-';
+              debugPrint('Error parsing measured_at: $e');
+            }
+          } else {
+            tanggal = '-';
+            waktu = '-';
+          }
+
+    voltage = _formatDouble(data['voltage']) ?? '-';
+    current = _formatDouble(data['current']) ?? '-';
+    power = _formatDouble(data['power']) ?? '-';
+    energy = _formatDouble(data['energy']) ?? '-';
+    frequency = _formatDouble(data['frequency']) ?? '-';
+    powerFactor = _formatDouble(data['power_factor']) ?? '-';
+    temperature = _formatDouble(data['temperature']) ?? '-';
+    humidity = _formatDouble(data['humidity']) ?? '-';
 
           _updateChartData('Voltage', double.tryParse(voltage));
           _updateChartData('Current', double.tryParse(current));

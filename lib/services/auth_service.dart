@@ -1,5 +1,6 @@
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/services/api_service.dart';
+import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
 
 class AuthService {
   // SIGN UP (Register)
@@ -16,10 +17,21 @@ class AuthService {
       );
 
       if (response['success'] == true) {
-        // Optionally save token if register endpoint returns it
-        if (response['data']?['token'] != null) {
-          await ApiService().setToken(response['data']['token']);
+        // Save user data if available
+        if (response['data']?['user'] != null) {
+          await UserPreferencesService()
+              .saveUser(User.fromMap(response['data']['user']));
         }
+
+        // Save token if available
+        if (response['data']?['token'] != null) {
+          await _saveAuthData(
+            token: response['data']['token'],
+            refreshToken: response['data']?['refresh_token'],
+            user: response['data']?['user'],
+          );
+        }
+
         return response;
       } else {
         return {
@@ -32,7 +44,7 @@ class AuthService {
     }
   }
 
-  // LOGIN
+  // LOGIN - Fixed version
   static Future<Map<String, dynamic>> signIn(
       String email, String password) async {
     try {
@@ -46,27 +58,24 @@ class AuthService {
       );
 
       if (response['success'] == true) {
-        // Save the token
-        // Based on your previous debug output, the token is at the root, not 'data'
-        if (response['data']['token'] != null) {
-          await ApiService().setToken(response['data']['token']);
+        // Handle both response structures
+        final token = response['token'] ?? response['data']?['token'];
+        final userData = response['user'] ?? response['data']?['user'];
+
+        if (token != null) {
+          await _saveAuthData(
+            token: token,
+            refreshToken:
+                response['refresh_token'] ?? response['data']?['refresh_token'],
+            user: userData,
+          );
         }
 
-        User? loggedInUser; // Declare a User variable
-        print("Response user: ${response['data']['user']}");
-        print("Response data: ${response['data']}");
-        if (response['data']['user'] != null) {
-          User().init(response['data']['user']);
-        }
-
-        // You might also want to include the User object in the returned map
-        // for the calling function to use.
         return {
           "success": true,
           "message": response['message'] ?? "Login berhasil",
-          "token":
-              response['token'], // Include token in the return for convenience
-          "user": loggedInUser, // Include the parsed User object
+          "token": token,
+          "user": UserPreferencesService().getUser(),
         };
       } else {
         return {
@@ -79,6 +88,25 @@ class AuthService {
     }
   }
 
+  // Helper method to save authentication data
+  static Future<void> _saveAuthData({
+    required String token,
+    String? refreshToken,
+    dynamic user,
+  }) async {
+    await ApiService().setToken(token);
+    await UserPreferencesService().saveTokens(
+      authToken: token,
+      refreshToken: refreshToken,
+    );
+
+    if (user != null) {
+      await UserPreferencesService().saveUser(
+        user is Map<String, dynamic> ? User.fromMap(user) : user,
+      );
+    }
+  }
+
   // LOGOUT
   static Future<Map<String, dynamic>> logout() async {
     try {
@@ -88,19 +116,23 @@ class AuthService {
         useToken: true,
       );
 
-      if (response['success'] == true) {
-        // Clear the token
-        await ApiService().clearToken();
-        return response;
-      } else {
-        return {
-          "success": false,
-          "message": response['message'] ?? "Logout failed",
-        };
-      }
+      // Always clear local data
+      await _clearAuthData();
+
+      return {
+        "success": response['success'] ?? true,
+        "message": response['message'] ?? "Logged out successfully",
+      };
     } catch (e) {
+      await _clearAuthData();
       return {"success": false, "message": "Error: $e"};
     }
+  }
+
+  // Helper to clear all auth data
+  static Future<void> _clearAuthData() async {
+    await ApiService().clearToken();
+    await UserPreferencesService().clearUserData();
   }
 
   // COMPLETE PROFILE
@@ -113,14 +145,12 @@ class AuthService {
         useToken: true,
       );
 
-      if (response['success'] == true) {
-        return response;
-      } else {
-        return {
-          "success": false,
-          "message": response['message'] ?? "Profile completion failed",
-        };
+      if (response['success'] == true && response['data']?['user'] != null) {
+        await UserPreferencesService()
+            .updateUserFields(response['data']['user']);
       }
+
+      return response;
     } catch (e) {
       return {"success": false, "message": "Error: $e"};
     }
@@ -129,19 +159,27 @@ class AuthService {
   // GET USER PROFILE
   static Future<Map<String, dynamic>> getUserProfile() async {
     try {
+      // Try to get from cache first
+      final cachedUser = await UserPreferencesService().getUser();
+      if (cachedUser != null) {
+        return {
+          "success": true,
+          "data": {"user": cachedUser.toJson()},
+        };
+      }
+
+      // Fallback to API
       final response = await ApiService().get(
         '/user',
         useToken: true,
       );
 
-      if (response['success'] == true) {
-        return response;
-      } else {
-        return {
-          "success": false,
-          "message": response['message'] ?? "Failed to get user profile",
-        };
+      if (response['success'] == true && response['data']?['user'] != null) {
+        await UserPreferencesService()
+            .saveUser(User.fromMap(response['data']['user']));
       }
+
+      return response;
     } catch (e) {
       return {"success": false, "message": "Error: $e"};
     }
@@ -150,6 +188,29 @@ class AuthService {
   // Check if user is authenticated
   static Future<bool> isAuthenticated() async {
     await ApiService().loadToken();
-    return ApiService().getToken().isNotEmpty;
+    final hasToken = ApiService().getToken().isNotEmpty;
+    final hasUser = UserPreferencesService().getUser() != null;
+    return hasToken && hasUser;
+  }
+
+  // Get current user (from cache)
+  static Future<User?> getCurrentUser() {
+    return UserPreferencesService().getUser();
+  }
+
+  // Refresh user data from API
+  static Future<void> refreshUserData() async {
+    try {
+      final response = await ApiService().get(
+        '/user',
+        useToken: true,
+      );
+      if (response['success'] == true && response['data']?['user'] != null) {
+        await UserPreferencesService()
+            .saveUser(User.fromMap(response['data']['user']));
+      }
+    } catch (e) {
+      print('Error refreshing user data: $e');
+    }
   }
 }

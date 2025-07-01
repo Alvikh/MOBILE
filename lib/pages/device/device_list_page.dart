@@ -12,7 +12,7 @@ class DeviceListPage extends StatefulWidget {
 class _DeviceListPageState extends State<DeviceListPage> {
   List<Device> devices = [
     Device(
-      id: '1',
+      id: 1,
       name: 'Smart Meter 1',
       deviceId: 'SM001',
       type: 'Smart Meter',
@@ -20,7 +20,7 @@ class _DeviceListPageState extends State<DeviceListPage> {
       installationDate: DateTime.now(),
     ),
     Device(
-      id: '2',
+      id: 2,
       name: 'Temperature Sensor',
       deviceId: 'TS001',
       type: 'Sensor Suhu',
@@ -101,7 +101,7 @@ class _DeviceListPageState extends State<DeviceListPage> {
             _buildDeviceDetailRow('Gedung', device.building),
             _buildDeviceDetailRow(
               'Tanggal Instalasi',
-              '${device.installationDate.day}/${device.installationDate.month}/${device.installationDate.year}',
+              '${device.installationDate?.day}/${device.installationDate?.month}/${device.installationDate?.year}',
             ),
             const SizedBox(height: 10),
             Row(

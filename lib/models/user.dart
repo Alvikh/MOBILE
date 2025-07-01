@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:ta_mobile/models/device.dart';
+
 class User {
   // Singleton instance
   static final User _instance = User._internal();
@@ -23,6 +25,7 @@ class User {
   DateTime? createdAt;
   DateTime? updatedAt;
   String? status;
+  List<Device> devices = []; // Initialize empty list
 
   /// Initialize user with data from API response
   void init(Map<String, dynamic> data) {
@@ -46,6 +49,15 @@ class User {
         ? null
         : DateTime.parse(data['updated_at'] as String);
     status = data['status'] as String?;
+
+    // Initialize devices list
+    if (data['devices'] != null) {
+      devices = (data['devices'] as List)
+          .map((deviceJson) => Device.fromJson(deviceJson))
+          .toList();
+    } else {
+      devices = [];
+    }
   }
 
   /// Clear all user data (for logout)
@@ -66,6 +78,7 @@ class User {
     createdAt = null;
     updatedAt = null;
     status = null;
+    devices.clear();
   }
 
   /// Check if user is authenticated
@@ -81,13 +94,15 @@ class User {
 
   @override
   String toString() {
-    return 'User(id: $id, name: $name, email: $email, phone: $phone, address: $address, role: $role, emailVerifiedAt: $emailVerifiedAt, twoFactorSecret: $twoFactorSecret, twoFactorRecoveryCodes: $twoFactorRecoveryCodes, twoFactorConfirmedAt: $twoFactorConfirmedAt, lastLoginAt: $lastLoginAt, currentTeamId: $currentTeamId, profilePhotoPath: $profilePhotoPath, createdAt: $createdAt, updatedAt: $updatedAt, status: $status)';
+    return 'User(id: $id, name: $name, email: $email, devices: ${devices.length})';
   }
 
   factory User.fromMap(Map<String, dynamic> data) {
-    User().init(data);
-    return User();
+    final user = User();
+    user.init(data);
+    return user;
   }
+
   void updateFromJson(Map<String, dynamic> json) {
     if (json.containsKey('id')) id = json['id'] as int?;
     if (json.containsKey('name')) name = json['name'] as String?;
@@ -95,42 +110,13 @@ class User {
     if (json.containsKey('phone')) phone = json['phone'] as String?;
     if (json.containsKey('address')) address = json['address'] as String?;
     if (json.containsKey('role')) role = json['role'] as String?;
+    if (json.containsKey('devices')) {
+      devices = (json['devices'] as List)
+          .map((deviceJson) => Device.fromJson(deviceJson))
+          .toList();
+    }
 
-    if (json.containsKey('email_verified_at')) {
-      emailVerifiedAt = json['email_verified_at'] != null
-          ? DateTime.tryParse(json['email_verified_at'] as String)
-          : null;
-    }
-    if (json.containsKey('two_factor_secret'))
-      twoFactorSecret = json['two_factor_secret'] as String?;
-    if (json.containsKey('two_factor_recovery_codes'))
-      twoFactorRecoveryCodes = json['two_factor_recovery_codes'] as String?;
-    if (json.containsKey('two_factor_confirmed_at')) {
-      twoFactorConfirmedAt = json['two_factor_confirmed_at'] != null
-          ? DateTime.tryParse(json['two_factor_confirmed_at'] as String)
-          : null;
-    }
-    if (json.containsKey('last_login_at')) {
-      lastLoginAt = json['last_login_at'] != null
-          ? DateTime.tryParse(json['last_login_at'] as String)
-          : null;
-    }
-    if (json.containsKey('current_team_id'))
-      currentTeamId = json['current_team_id'] as int?;
-    if (json.containsKey('profile_photo_path'))
-      profilePhotoPath = json['profile_photo_path'] as String?;
-
-    if (json.containsKey('created_at')) {
-      createdAt = json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String)
-          : null;
-    }
-    if (json.containsKey('updated_at')) {
-      updatedAt = json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'] as String)
-          : null;
-    }
-    if (json.containsKey('status')) status = json['status'] as String?;
+    // ... (rest of your existing updateFromJson code)
   }
 
   Map<String, dynamic> toMap() => {
@@ -150,6 +136,7 @@ class User {
         'created_at': createdAt?.toIso8601String(),
         'updated_at': updatedAt?.toIso8601String(),
         'status': status,
+        'devices': devices.map((device) => device.toJson()).toList(),
       };
 
   factory User.fromJson(String data) {
@@ -164,16 +151,17 @@ class User {
       'phone': phone,
       'address': address,
       'role': role,
-      'email_verified_at': emailVerifiedAt?.toIso8601String(),
+      'email_verified_at': emailVerifiedAt?.toString(),
       'two_factor_secret': twoFactorSecret,
       'two_factor_recovery_codes': twoFactorRecoveryCodes,
-      'two_factor_confirmed_at': twoFactorConfirmedAt?.toIso8601String(),
-      'last_login_at': lastLoginAt?.toIso8601String(),
+      'two_factor_confirmed_at': twoFactorConfirmedAt?.toString(),
+      'last_login_at': lastLoginAt?.toString(),
       'current_team_id': currentTeamId,
       'profile_photo_path': profilePhotoPath,
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      'created_at': createdAt?.toString(),
+      'updated_at': updatedAt?.toString(),
       'status': status,
+      'devices': devices.map((device) => device.toJson()).toList(),
     };
   }
 
@@ -194,6 +182,7 @@ class User {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? status,
+    List<Device>? devices,
   }) {
     return User()
       ..id = id ?? this.id
@@ -212,7 +201,8 @@ class User {
       ..profilePhotoPath = profilePhotoPath ?? this.profilePhotoPath
       ..createdAt = createdAt ?? this.createdAt
       ..updatedAt = updatedAt ?? this.updatedAt
-      ..status = status ?? this.status;
+      ..status = status ?? this.status
+      ..devices = devices ?? List.from(this.devices);
   }
 
   /// Get formatted creation date
@@ -223,7 +213,9 @@ class User {
   /// Get formatted last login time
   String get formattedLastLogin {
     if (lastLoginAt == null) return 'Never logged in';
-    final lastLogin = DateTime.parse(lastLoginAt.toString());
+    final lastLogin = lastLoginAt is DateTime
+        ? lastLoginAt
+        : DateTime.parse(lastLoginAt.toString());
     return 'Last seen ${lastLogin.toLocal().toString().split('.')[0]}';
   }
 }
