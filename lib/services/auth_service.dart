@@ -8,7 +8,7 @@ class AuthService {
       String email, String password) async {
     try {
       final response = await ApiService().post(
-        ApiEndpoints.register,
+        '/register',
         {
           "email": email,
           "password": password,
@@ -17,22 +17,17 @@ class AuthService {
       );
 
       if (response['success'] == true) {
-        // Save user data if available
-        if (response['data']?['user'] != null) {
-          await UserPreferencesService()
-              .saveUser(User.fromMap(response['data']['user']));
-        }
+        await _saveAuthData(
+          token: response['token'],
+          refreshToken: response['refresh_token'],
+          userData: response['user'],
+        );
 
-        // Save token if available
-        if (response['data']?['token'] != null) {
-          await _saveAuthData(
-            token: response['data']['token'],
-            refreshToken: response['data']?['refresh_token'],
-            user: response['data']?['user'],
-          );
-        }
-
-        return response;
+        return {
+          "success": true,
+          "message": "Registration successful",
+          "user": User.fromMap(response['user']),
+        };
       } else {
         return {
           "success": false,
@@ -44,12 +39,12 @@ class AuthService {
     }
   }
 
-  // LOGIN - Fixed version
+  // LOGIN
   static Future<Map<String, dynamic>> signIn(
       String email, String password) async {
     try {
       final response = await ApiService().post(
-        ApiEndpoints.login,
+        '/login',
         {
           "email": email,
           "password": password,
@@ -58,99 +53,61 @@ class AuthService {
       );
 
       if (response['success'] == true) {
-        // Handle both response structures
-        final token = response['token'] ?? response['data']?['token'];
-        final userData = response['user'] ?? response['data']?['user'];
-
-        if (token != null) {
-          await _saveAuthData(
-            token: token,
-            refreshToken:
-                response['refresh_token'] ?? response['data']?['refresh_token'],
-            user: userData,
-          );
-        }
-
+        print(
+            "successs 1 debug user : ${response['user']}, token: ${response['token']} , refresh_token: ${response['refresh_token']}, success: ${response['success']} ");
+        await _saveAuthData(
+          token: response['data']['token'],
+          refreshToken: response['data']['refresh_token'],
+          userData: response['data']['user'],
+        );
+        print("successs 2 debug");
         return {
           "success": true,
-          "message": response['message'] ?? "Login berhasil",
-          "token": token,
-          "user": UserPreferencesService().getUser(),
+          "message": "Login successful",
+          "user": User.fromMap(response['data']['user']),
         };
       } else {
         return {
           "success": false,
-          "message": response['message'] ?? "Login failed",
+          "message": response['data']['message'] ?? "Login failed",
         };
       }
     } catch (e) {
-      return {"success": false, "message": "Error: $e"};
+      print("error debug: $e");
+      return {"success": false, "message": "coooook: $e"};
     }
-  }
-
-  // Helper method to save authentication data
-  static Future<void> _saveAuthData({
-    required String token,
-    String? refreshToken,
-    dynamic user,
-  }) async {
-    await ApiService().setToken(token);
-    await UserPreferencesService().saveTokens(
-      authToken: token,
-      refreshToken: refreshToken,
-    );
-
-    if (user != null) {
-      await UserPreferencesService().saveUser(
-        user is Map<String, dynamic> ? User.fromMap(user) : user,
-      );
-    }
-  }
-
-  // LOGOUT
-  static Future<Map<String, dynamic>> logout() async {
-    try {
-      final response = await ApiService().post(
-        '/logout',
-        {},
-        useToken: true,
-      );
-
-      // Always clear local data
-      await _clearAuthData();
-
-      return {
-        "success": response['success'] ?? true,
-        "message": response['message'] ?? "Logged out successfully",
-      };
-    } catch (e) {
-      await _clearAuthData();
-      return {"success": false, "message": "Error: $e"};
-    }
-  }
-
-  // Helper to clear all auth data
-  static Future<void> _clearAuthData() async {
-    await ApiService().clearToken();
-    await UserPreferencesService().clearUserData();
   }
 
   // COMPLETE PROFILE
-  static Future<Map<String, dynamic>> completeProfile(
-      Map<String, dynamic> profileData) async {
+  static Future<Map<String, dynamic>> completeProfile({
+    required String name,
+    required String phone,
+    required String address,
+  }) async {
     try {
       final response = await ApiService().post(
-        ApiEndpoints.completeProfile,
-        profileData,
+        '/complete-profile',
+        {
+          "name": name,
+          "phone": phone,
+          "address": address,
+        },
         useToken: true,
       );
 
-      if (response['success'] == true && response['data']?['user'] != null) {
-        await UserPreferencesService()
-            .updateUserFields(response['data']['user']);
+      if (response['success'] == true) {
+        await UserPreferencesService().saveUser(User.fromMap(response['user']));
+        return {
+          "success": true,
+          "message": "Profile completed",
+          "user": User.fromMap(response['user']),
+        };
+      } else {
+        return {
+          "success": false,
+          "message": response['message'] ?? "Failed to complete profile",
+        };
       }
-
-      return response;
     } catch (e) {
       return {"success": false, "message": "Error: $e"};
     }
@@ -159,58 +116,145 @@ class AuthService {
   // GET USER PROFILE
   static Future<Map<String, dynamic>> getUserProfile() async {
     try {
-      // Try to get from cache first
-      final cachedUser = await UserPreferencesService().getUser();
-      if (cachedUser != null) {
-        return {
-          "success": true,
-          "data": {"user": cachedUser.toJson()},
-        };
-      }
-
-      // Fallback to API
       final response = await ApiService().get(
         '/user',
         useToken: true,
       );
 
-      if (response['success'] == true && response['data']?['user'] != null) {
-        await UserPreferencesService()
-            .saveUser(User.fromMap(response['data']['user']));
+      if (response['success'] == true) {
+        final user = User.fromMap(response['user']);
+        await UserPreferencesService().saveUser(user);
+        return {
+          "success": true,
+          "user": user,
+        };
+      } else {
+        return {
+          "success": false,
+          "message": response['message'] ?? "Failed to get user profile",
+        };
       }
-
-      return response;
     } catch (e) {
       return {"success": false, "message": "Error: $e"};
     }
   }
 
-  // Check if user is authenticated
-  static Future<bool> isAuthenticated() async {
-    await ApiService().loadToken();
-    final hasToken = ApiService().getToken().isNotEmpty;
-    final hasUser = UserPreferencesService().getUser() != null;
-    return hasToken && hasUser;
-  }
-
-  // Get current user (from cache)
-  static Future<User?> getCurrentUser() {
-    return UserPreferencesService().getUser();
-  }
-
-  // Refresh user data from API
-  static Future<void> refreshUserData() async {
+  // REFRESH TOKEN
+  static Future<Map<String, dynamic>> refreshToken() async {
     try {
-      final response = await ApiService().get(
-        '/user',
-        useToken: true,
+      final refreshToken = await UserPreferencesService().getRefreshToken();
+      if (refreshToken == null) {
+        await _clearAuthData();
+        return {
+          "success": false,
+          "message": "No refresh token available",
+          "shouldLogout": true,
+        };
+      }
+
+      final response = await ApiService().post(
+        '/refresh',
+        {"refresh_token": refreshToken},
+        useToken: false,
       );
-      if (response['success'] == true && response['data']?['user'] != null) {
-        await UserPreferencesService()
-            .saveUser(User.fromMap(response['data']['user']));
+
+      if (response['success'] == true) {
+        await _saveAuthData(
+          token: response['token'],
+          refreshToken: response['refresh_token']?.toString(),
+          userData: response['user'] ??
+              (await UserPreferencesService().getUser())?.toMap(),
+        );
+
+        return {
+          "success": true,
+          "message": "Token refreshed",
+        };
+      } else {
+        await _clearAuthData();
+        return {
+          "success": false,
+          "message": response['message'] ?? "Failed to refresh token",
+          "shouldLogout": true,
+        };
       }
     } catch (e) {
-      print('Error refreshing user data: $e');
+      await _clearAuthData();
+      return {
+        "success": false,
+        "message": "Error: $e",
+        "shouldLogout": true,
+      };
     }
+  }
+
+  // LOGOUT
+  static Future<Map<String, dynamic>> logout() async {
+    try {
+      await ApiService().post(
+        '/logout',
+        {},
+        useToken: true,
+      );
+      await _clearAuthData();
+      return {"success": true, "message": "Logged out"};
+    } catch (e) {
+      await _clearAuthData();
+      return {"success": false, "message": "Error: $e"};
+    }
+  }
+
+  // Helper methods
+  static Future<void> _saveAuthData({
+    required String token,
+    String? refreshToken,
+    required dynamic userData,
+  }) async {
+    try {
+      // 1. Handle berbagai tipe input userData
+      late User user;
+
+      if (userData is User) {
+        user = userData;
+      } else if (userData is Map<String, dynamic>) {
+        // Pastikan devices adalah List
+        if (userData['devices'] is! List) {
+          userData['devices'] = [];
+        }
+        user = User.fromMap(userData);
+      } else {
+        throw Exception('Tipe data user tidak valid');
+      }
+
+      // 2. Simpan token
+      await ApiService().setToken(token);
+
+      // 3. Simpan refresh token jika ada
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await UserPreferencesService().saveRefreshToken(refreshToken);
+      }
+
+      // 4. Simpan data user
+      await UserPreferencesService().saveUser(user);
+    } catch (e, stackTrace) {
+      print('Error dalam _saveAuthData: $e\n$stackTrace');
+      rethrow;
+    }
+  }
+
+  static Future<void> _clearAuthData() async {
+    await ApiService().clearToken();
+    await UserPreferencesService().clearUserData();
+  }
+
+  // Check authentication status
+  static Future<bool> isAuthenticated() async {
+    final token = await ApiService().getToken();
+    return token.isNotEmpty;
+  }
+
+  // Get current user
+  static Future<User?> getCurrentUser() async {
+    return await UserPreferencesService().getUser();
   }
 }

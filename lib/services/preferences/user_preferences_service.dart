@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/models/user.dart';
 
 class UserPreferencesService {
@@ -36,17 +37,25 @@ class UserPreferencesService {
     }
   }
 
-  /// Save complete user data
+  /// Save complete user data with null handling
   Future<bool> saveUser(User user) async {
     await _ensureInitialized();
     try {
-      final userJson = jsonEncode(user.toJson());
+      // Convert the user to a map with null values replaced by empty strings
+      final userMap = user.toMap().map((key, value) {
+        if (value == null) {
+          return MapEntry(key, '');
+        }
+        if (value is List) {
+          return MapEntry(
+              key, value.map((e) => e is Device ? e.toMap() : e).toList());
+        }
+        return MapEntry(key, value);
+      });
+
+      final userJson = jsonEncode(userMap);
       final tokenSaved = await _prefs.setString(_keyUserData, userJson);
       final loginStatusSaved = await _prefs.setBool(_keyIsLoggedIn, true);
-
-      // Debugging: Cetak nilai yang disimpan
-      print('User saved: $userJson');
-      print('Login status: true ${_prefs.getBool(_keyIsLoggedIn)}');
 
       return tokenSaved && loginStatusSaved;
     } catch (e) {
@@ -57,7 +66,6 @@ class UserPreferencesService {
 
   Future<bool> isLoggedIn() async {
     await _ensureInitialized();
-    // Periksa kedua kondisi: status login DAN token tersedia
     final hasLoginFlag = _prefs.getBool(_keyIsLoggedIn) ?? false;
     final hasUserData = _prefs.getString(_keyUserData) != null;
     final hasToken = _prefs.getString(_keyAuthToken) != null;
@@ -69,12 +77,18 @@ class UserPreferencesService {
   }
 
   /// Save authentication tokens
-  Future<void> saveTokens(
-      {required String authToken, String? refreshToken}) async {
+  Future<bool> saveTokens({
+    required String authToken,
+    required String refreshToken,
+  }) async {
     await _ensureInitialized();
-    await _prefs.setString(_keyAuthToken, authToken);
-    if (refreshToken != null) {
-      await _prefs.setString(_keyRefreshToken, refreshToken);
+    try {
+      final authTokenSaved = await _prefs.setString(_keyAuthToken, authToken);
+      final refreshTokenSaved = await saveRefreshToken(refreshToken);
+      return authTokenSaved && refreshTokenSaved;
+    } catch (e) {
+      print('Error saving tokens: $e');
+      return false;
     }
   }
 
@@ -104,18 +118,6 @@ class UserPreferencesService {
     return _prefs.getString(_keyRefreshToken);
   }
 
-  /// Clear all user data (logout)
-  Future<void> clearUserData() async {
-    await _ensureInitialized();
-    await _prefs.remove(_keyUserData);
-    await _prefs.remove(_keyAuthToken);
-    await _prefs.remove(_keyRefreshToken);
-    await _prefs.setBool(_keyIsLoggedIn, false);
-
-    // Also clear the singleton User instance
-    User().clear();
-  }
-
   /// Update specific user fields
   Future<bool> updateUserFields(Map<String, dynamic> updates) async {
     await _ensureInitialized();
@@ -136,5 +138,37 @@ class UserPreferencesService {
       print('Error updating user: $e');
       return false;
     }
+  }
+
+  /// Save refresh token
+  Future<bool> saveRefreshToken(String refreshToken) async {
+    await _ensureInitialized();
+    try {
+      final result = await _prefs.setString(_keyRefreshToken, refreshToken);
+      print('Refresh token saved: $refreshToken');
+      return result;
+    } catch (e) {
+      print('Error saving refresh token: $e');
+      return false;
+    }
+  }
+
+  /// Check if refresh token exists
+  Future<bool> hasRefreshToken() async {
+    await _ensureInitialized();
+    return _prefs.getString(_keyRefreshToken) != null;
+  }
+
+  /// Clear all user data
+  Future<void> clearUserData() async {
+    await _ensureInitialized();
+    print('Clearing all user data...');
+    await Future.wait([
+      _prefs.remove(_keyUserData),
+      _prefs.remove(_keyAuthToken),
+      _prefs.remove(_keyRefreshToken),
+      _prefs.setBool(_keyIsLoggedIn, false),
+    ]);
+    print('User data cleared');
   }
 }

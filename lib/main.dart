@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'PowerSmartIQ',
+      title: 'Smart Power Management',
       routes: {
         AppRoutes.login: (context) => SignInPage(),
         AppRoutes.home: (context) => HomePage(),

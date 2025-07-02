@@ -23,38 +23,67 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> checkLoginStatus() async {
     final isLoggedIn = await UserPreferencesService().isLoggedIn();
-    print(isLoggedIn);
-    if (isLoggedIn) {
-      final user = await UserPreferencesService().getUser();
-      if (user != null) {
-        User() = user;
-        final authToken = await UserPreferencesService().getAuthToken();
-        if (authToken != null) {
-          await ApiService().setToken(authToken);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => HomePage()),
-          );
-        } else {
-          // Handle the case where authToken is null, e.g., log out or show error
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => WelcomePage()),
-          );
-        }
-      } else {
-        // Handle the case where user is null, e.g., log out or show error
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => WelcomePage()),
-        );
+    debugPrint('User login status: $isLoggedIn');
+
+    if (!isLoggedIn) {
+      _navigateToWelcomePage();
+      return;
+    }
+
+    try {
+      // Get the saved auth token
+      final authToken = await UserPreferencesService().getAuthToken();
+      if (authToken == null) {
+        debugPrint('No auth token found');
+        await _clearAndNavigateToWelcome();
+        return;
       }
-    } else {
+
+      // Set the token for API calls
+      await ApiService().setToken(authToken);
+
+      // Fetch the latest user data from API
+      final response = await ApiService().get('/user', useToken: true);
+
+      if (response['success'] == true && response['user'] != null) {
+        // Update local user data with fresh data from server
+        final updatedUser = User.fromMap(response['user']);
+        await UserPreferencesService().saveUser(updatedUser);
+
+        // Navigate to home page with fresh data
+        _navigateToHomePage();
+      } else {
+        debugPrint('Failed to fetch user data: ${response['message']}');
+        await _clearAndNavigateToWelcome();
+      }
+    } catch (e) {
+      debugPrint('Error checking login status: $e');
+      await _clearAndNavigateToWelcome();
+    }
+  }
+
+// Helper methods
+  void _navigateToHomePage() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage()),
+      );
+    });
+  }
+
+  void _navigateToWelcomePage() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => WelcomePage()),
       );
-    }
+    });
+  }
+
+  Future<void> _clearAndNavigateToWelcome() async {
+    await UserPreferencesService().clearUserData();
+    _navigateToWelcomePage();
   }
 
   @override

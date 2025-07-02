@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ta_mobile/pages/account/account_page.dart';
 import 'package:ta_mobile/pages/controlling/controlling_page.dart';
+import 'package:ta_mobile/pages/guide/user_guide_page.dart';
 import 'package:ta_mobile/pages/monitoring/monitoring_page.dart';
+import 'package:ta_mobile/pages/partial/welcome_page.dart';
+import 'package:ta_mobile/widgets/custom_elevated_button.dart';
 // import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
 import 'package:ta_mobile/widgets/custom_header.dart';
-import 'package:ta_mobile/widgets/custom_elevated_button.dart';
-import 'package:ta_mobile/pages/guide/user_guide_page.dart';
-import 'package:ta_mobile/pages/partial/welcome_page.dart';
-import 'package:ta_mobile/pages/account/account_page.dart';
 
-
+import '../../models/user.dart';
 
 // class HomePage extends StatelessWidget {
 //   const HomePage({Key? key}) : super(key: key);
@@ -368,7 +368,7 @@ class HomePage extends StatelessWidget {
 
           // Custom Header
           CustomHeader(
-            title: "Welcome\nAlvi!",
+            title: "Welcome\n${User().name}!",
             backgroundColor: Color(0xFFDAE1E7),
             textColor: Color(0xFF085085),
           ),
