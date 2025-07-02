@@ -3,7 +3,6 @@ import 'package:ta_mobile/services/api_service.dart';
 import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
 
 class AuthService {
-  // SIGN UP (Register)
   static Future<Map<String, dynamic>> signUp(
       String email, String password) async {
     try {
@@ -116,8 +115,9 @@ class AuthService {
   // GET USER PROFILE
   static Future<Map<String, dynamic>> getUserProfile() async {
     try {
-      final response = await ApiService().get(
+      final response = await ApiService().post(
         '/user',
+        {'user_id': User().id},
         useToken: true,
       );
 
@@ -188,20 +188,36 @@ class AuthService {
     }
   }
 
-  // LOGOUT
   static Future<Map<String, dynamic>> logout() async {
     try {
-      await ApiService().post(
+      final response = await ApiService().post(
         '/logout',
         {},
         useToken: true,
       );
+
+      // 2. Clear local data regardless of API response
       await _clearAuthData();
-      return {"success": true, "message": "Logged out"};
+
+      // 3. Return appropriate response
+      if (response['success'] == true) {
+        return {"success": true, "message": "Logged out successfully"};
+      } else {
+        return {
+          "success": false,
+          "message": response['message'] ?? "Logout failed"
+        };
+      }
     } catch (e) {
+      // Even if API call fails, clear local data
       await _clearAuthData();
-      return {"success": false, "message": "Error: $e"};
+      return {"success": false, "message": "Error during logout: $e"};
     }
+  }
+
+  static Future<void> _clearAuthData() async {
+    await ApiService().clearToken();
+    await UserPreferencesService().clearUserData();
   }
 
   // Helper methods
@@ -240,11 +256,6 @@ class AuthService {
       print('Error dalam _saveAuthData: $e\n$stackTrace');
       rethrow;
     }
-  }
-
-  static Future<void> _clearAuthData() async {
-    await ApiService().clearToken();
-    await UserPreferencesService().clearUserData();
   }
 
   // Check authentication status

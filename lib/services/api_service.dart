@@ -132,10 +132,12 @@ class ApiService {
     return _token ?? "";
   }
 
-  Future<dynamic> get(String endpoint, {bool useToken = true}) async {
+  Future<dynamic> get(String endpoint,
+      {Map<String, dynamic>? body, bool useToken = true}) async {
     try {
       final response = await _dio.get(
         endpoint,
+        data: body,
         options: Options(headers: useToken ? null : {'Authorization': null}),
       );
       return _handleResponse(response);

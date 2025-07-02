@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:ta_mobile/pages/account/edit_profile_page.dart';
 import 'package:ta_mobile/pages/auth/change_password_page.dart';
+import 'package:ta_mobile/pages/auth/forgot_password_page.dart';
 import 'package:ta_mobile/pages/device/add_device_page.dart';
 import 'package:ta_mobile/pages/device/device_list_page.dart';
 
@@ -29,12 +31,12 @@ class SettingsPage extends StatelessWidget {
                       icon: Icons.person_outline,
                       title: 'Edit Profil',
                       onTap: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) => const EditProfilePage(),
-                        //   ),
-                        // );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EditProfilePage(),
+                          ),
+                        );
                       },
                     ),
                   ],
@@ -91,7 +93,12 @@ class SettingsPage extends StatelessWidget {
                       icon: Icons.vpn_key_outlined,
                       title: 'Lupa Password',
                       onTap: () {
-                        // Navigate to forgot password
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ForgotPasswordPage(),
+                          ),
+                        );
                       },
                     ),
                   ],

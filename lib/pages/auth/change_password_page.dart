@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ta_mobile/services/account_service.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({Key? key}) : super(key: key);
@@ -12,6 +13,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   bool _isLoading = false;
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
@@ -91,7 +93,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               ),
             ),
           ),
-          // const CustomFloatingNavbar(selectedIndex: 3),
         ],
       ),
     );
@@ -121,7 +122,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         if (value == null || value.isEmpty) {
           return 'Harap masukkan $label';
         }
-        if (label.contains('baru') && value.length < 8) {
+        if (label.contains('Baru') && value.length < 8) {
           return 'Password minimal 8 karakter';
         }
         return null;
@@ -131,6 +132,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_newPasswordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -141,25 +143,26 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    final result = await AccountService.updatePassword(
+      currentPassword: _currentPasswordController.text.trim(),
+      newPassword: _newPasswordController.text.trim(),
+      newPasswordConfirmation: _confirmPasswordController.text.trim(),
+    );
 
-    setState(() {
-      _isLoading = false;
-    });
+    setState(() => _isLoading = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Password berhasil diubah'),
-        backgroundColor: Colors.green,
+      SnackBar(
+        content: Text(result['message']),
+        backgroundColor: result['success'] ? Colors.green : Colors.red,
       ),
     );
 
-    Navigator.of(context).pop();
+    if (result['success']) {
+      Navigator.of(context).pop(); // kembali ke halaman sebelumnya
+    }
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ta_mobile/pages/partial/welcome_page.dart';
+import 'package:ta_mobile/services/auth_service.dart';
 import 'package:ta_mobile/widgets/custom_elevated_button.dart';
 import 'package:ta_mobile/widgets/custom_header.dart';
 
@@ -125,14 +126,22 @@ class LandingPage extends StatelessWidget {
             child: CustomElevatedButton(
               text: "Log out",
               onPressed: () async {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.remove('isLoggedIn'); // atau prefs.clear();
-
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => WelcomePage()),
-                  (route) => false, // Hapus semua halaman sebelumnya
-                );
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                var response = await AuthService.logout();
+                if (response['success'] == true) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => WelcomePage()),
+                    (route) => false, // Hapus semua halaman sebelumnya
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(response['message'] ?? "Logout failed"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
             ),
           ),

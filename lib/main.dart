@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ta_mobile/pages/auth/sign_in_page.dart';
 import 'package:ta_mobile/pages/home/home_page.dart';
 import 'package:ta_mobile/routes.dart';
@@ -20,7 +21,11 @@ import 'pages/partial/splash_page.dart';
 // }
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

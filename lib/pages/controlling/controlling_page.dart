@@ -18,17 +18,17 @@ class _ControllingPageState extends State<ControllingPage> {
   @override
   void initState() {
     super.initState();
-    mqttService = MqttService(topic: 'smartpower/device/status');
+    mqttService = MqttService();
     devices = User()
         .devices
         .where((device) => device.type.toLowerCase() == 'control')
         .toList();
-    mqttService.connect();
+    // mqttService.connect();
   }
 
   @override
   void dispose() {
-    mqttService.disconnect();
+    // mqttService.disconnect();
     super.dispose();
   }
 
@@ -38,7 +38,7 @@ class _ControllingPageState extends State<ControllingPage> {
 
     setState(() {
       final device = devices.firstWhere((d) => d.deviceId == deviceId);
-      device.status = status ? 'active' : 'inactive';
+      device.state = status ? true : false;
     });
   }
 
@@ -74,7 +74,31 @@ class _ControllingPageState extends State<ControllingPage> {
                                 ),
                               ),
                               const SizedBox(height: 20),
-                              _buildDeviceGrid(),
+                              devices.isEmpty
+                                  ? Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 40, horizontal: 20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color: Colors.grey[300]!),
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          "Anda tidak memiliki perangkat kontrol.\nTambahkan perangkat control terlebih dahulu.",
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black54,
+                                            fontFamily: 'Poppins',
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : _buildDeviceGrid(),
                               const SizedBox(height: 30),
                               _buildSceneControls(),
                             ],
@@ -183,7 +207,7 @@ class _ControllingPageState extends State<ControllingPage> {
   }
 
   Widget _buildDeviceCard(Device device) {
-    final isActive = device.status == 'active';
+    final isActive = device.state == true;
     final deviceColor = _getDeviceColor(device.type);
 
     return Card(

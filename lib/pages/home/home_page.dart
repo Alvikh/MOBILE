@@ -5,6 +5,8 @@ import 'package:ta_mobile/pages/controlling/controlling_page.dart';
 import 'package:ta_mobile/pages/guide/user_guide_page.dart';
 import 'package:ta_mobile/pages/monitoring/monitoring_page.dart';
 import 'package:ta_mobile/pages/partial/welcome_page.dart';
+import 'package:ta_mobile/services/auth_service.dart';
+import 'package:ta_mobile/services/mqtt_service.dart';
 import 'package:ta_mobile/widgets/custom_elevated_button.dart';
 // import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
 import 'package:ta_mobile/widgets/custom_header.dart';
@@ -457,14 +459,23 @@ class HomePage extends StatelessWidget {
             child: CustomElevatedButton(
               text: "Log out",
               onPressed: () async {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.remove('isLoggedIn'); // atau prefs.clear();
-
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => WelcomePage()),
-                  (route) => false, // Hapus semua halaman sebelumnya
-                );
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                var response = await AuthService.logout();
+                MqttService().disconnect();
+                if (response['success'] == true) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => WelcomePage()),
+                    (route) => false, // Hapus semua halaman sebelumnya
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(response['message'] ?? "Logout failed"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
             ),
           ),
