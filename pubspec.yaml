@@ -11,10 +11,12 @@ dependencies:
     sdk: flutter
   rename: ^3.0.2
   http: ^1.4.0
+  dio: ^5.8.0+1
+  flutter_riverpod: ^2.6.1
   shared_preferences: ^2.2.2
-  syncfusion_flutter_charts: ^29.2.10
+  syncfusion_flutter_charts: ^30.1.37
   intl: ^0.20.2
-  syncfusion_flutter_gauges: ^29.2.10
+  syncfusion_flutter_gauges: ^30.1.37
 
 dev_dependencies:
   flutter_test:
@@ -28,6 +30,7 @@ flutter:
 
   assets:
     - assets/LOGO.png
+    - assets/ICON2.png
 
   fonts:
     - family: Inter24
@@ -46,11 +49,19 @@ flutter:
           weight: 800
 
 flutter_icons:
+  xandroid: true
+  ios: true
+  image_path: "assets/ICON2.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/ICON2.png"
+
+flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/LOGO.png"
-  adaptive_icon_background: "#085085"
-  adaptive_icon_foreground: "assets/LOGO.png"
+  image_path: "assets/ICON2.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/ICON2.png"
+  remove_alpha_ios: true
 
 flutter_launcher_name:
-  name: "PowerSmartIQ"
+  name: "Smart Power Management"

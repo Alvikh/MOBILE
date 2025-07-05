@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ta_mobile/models/device.dart';
+import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
 import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
 
@@ -11,119 +13,110 @@ class ControllingPage extends StatefulWidget {
 
 class _ControllingPageState extends State<ControllingPage> {
   late MqttService mqttService;
-  final List<Map<String, dynamic>> devices = [
-    {
-      'id': 'device1',
-      'name': 'Lampu Ruang Tamu',
-      'status': false,
-      'icon': Icons.lightbulb_outline,
-      'color': Colors.amber,
-    },
-    {
-      'id': 'device2',
-      'name': 'AC Kamar',
-      'status': false,
-      'icon': Icons.ac_unit,
-      'color': Colors.blue,
-    },
-    {
-      'id': 'device3',
-      'name': 'Kulkas',
-      'status': true,
-      'icon': Icons.kitchen,
-      'color': Colors.teal,
-    },
-    {
-      'id': 'device4',
-      'name': 'TV',
-      'status': false,
-      'icon': Icons.tv,
-      'color': Colors.purple,
-    },
-    {
-      'id': 'device5',
-      'name': 'Pompa Air',
-      'status': false,
-      'icon': Icons.water,
-      'color': Colors.lightBlue,
-    },
-    {
-      'id': 'device6',
-      'name': 'Kipas Angin',
-      'status': false,
-      'icon': Icons.air,
-      'color': Colors.green,
-    },
-  ];
+  late List<Device> devices;
 
   @override
   void initState() {
     super.initState();
-    mqttService = MqttService(broker: 'broker.hivemq.com');
-    mqttService.connect();
+    mqttService = MqttService();
+    if (!mqttService.isConnected) {
+      mqttService.connect();
+    }
+    devices = User()
+        .devices
+        .where((device) => device.type.toLowerCase() == 'control')
+        .toList();
+    // mqttService.connect();
   }
 
   @override
   void dispose() {
-    mqttService.disconnect();
+    // mqttService.disconnect();
+
     super.dispose();
   }
 
   void _toggleDevice(String deviceId, bool status) {
-    mqttService.publish(
-      'control/$deviceId',
-      {'command': status ? 'on' : 'off'},
-    );
+    mqttService.publishControlCommand(
+        deviceId, 'relay_control', status ? 'ON' : 'OFF');
+
     setState(() {
-      devices.firstWhere((d) => d['id'] == deviceId)['status'] = status;
+      final device = devices.firstWhere((d) => d.deviceId == deviceId);
+      device.state = status ? true : false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeDevices = devices.where((d) => d['status'] == true).length;
+    final activeDevices = devices.where((d) => d.status == 'active').length;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: SafeArea(
-        child: Stack(children: [
-          Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 100),
-                  child: Column(
-                    children: [
-                      _buildHeader(activeDevices),
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Device Control',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                fontFamily: 'Poppins',
-                                color: Colors.black87,
+      body: Container(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 100),
+                    child: Column(
+                      children: [
+                        _buildHeader(activeDevices),
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Device Control',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Poppins',
+                                  color: Colors.black87,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 20),
-                            _buildDeviceGrid(),
-                            const SizedBox(height: 30),
-                            _buildSceneControls(),
-                          ],
+                              const SizedBox(height: 20),
+                              devices.isEmpty
+                                  ? Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 40, horizontal: 20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color: Colors.grey[300]!),
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          "Anda tidak memiliki perangkat kontrol.\nTambahkan perangkat control terlebih dahulu.",
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black54,
+                                            fontFamily: 'Poppins',
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : _buildDeviceGrid(),
+                              const SizedBox(height: 30),
+                              _buildSceneControls(),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const CustomFloatingNavbar(selectedIndex: 2),
-        ]),
+              ],
+            ),
+            const CustomFloatingNavbar(selectedIndex: 2),
+          ],
+        ),
       ),
     );
   }
@@ -149,6 +142,9 @@ class _ControllingPageState extends State<ControllingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(
+            height: 50,
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -210,29 +206,30 @@ class _ControllingPageState extends State<ControllingPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 15,
         mainAxisSpacing: 15,
-        childAspectRatio: 1,
+        childAspectRatio: 0.8,
       ),
       itemCount: devices.length,
       itemBuilder: (context, index) => _buildDeviceCard(devices[index]),
     );
   }
 
-  Widget _buildDeviceCard(Map<String, dynamic> device) {
-    final isActive = device['status'] as bool;
-    final color = device['color'] as Color;
+  Widget _buildDeviceCard(Device device) {
+    final isActive = device.state == true;
+    final deviceColor = _getDeviceColor(device.type);
 
     return Card(
       elevation: isActive ? 4 : 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
         side: BorderSide(
-          color:
-              isActive ? color.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
+          color: isActive
+              ? deviceColor.withOpacity(0.3)
+              : Colors.grey.withOpacity(0.1),
         ),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(15),
-        onTap: () => _toggleDevice(device['id'], !isActive),
+        onTap: () => _toggleDevice(device.deviceId, !isActive),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -245,22 +242,23 @@ class _ControllingPageState extends State<ControllingPage> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(isActive ? 0.2 : 0.1),
+                      color: deviceColor.withOpacity(isActive ? 0.2 : 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      device['icon'] as IconData,
+                      _getDeviceIcon(device.type),
                       size: 24,
-                      color: isActive ? color : Colors.grey[400],
+                      color: isActive ? deviceColor : Colors.grey[400],
                     ),
                   ),
                   Transform.scale(
                     scale: 0.8,
                     child: Switch(
                       value: isActive,
-                      onChanged: (value) => _toggleDevice(device['id'], value),
-                      activeColor: color,
-                      activeTrackColor: color.withOpacity(0.4),
+                      onChanged: (value) =>
+                          _toggleDevice(device.deviceId, value),
+                      activeColor: deviceColor,
+                      activeTrackColor: deviceColor.withOpacity(0.4),
                     ),
                   ),
                 ],
@@ -269,7 +267,7 @@ class _ControllingPageState extends State<ControllingPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    device['name'],
+                    device.name,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -283,7 +281,7 @@ class _ControllingPageState extends State<ControllingPage> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: isActive ? color : Colors.grey[400],
+                      color: isActive ? deviceColor : Colors.grey[400],
                       fontFamily: 'Poppins',
                     ),
                   ),
@@ -294,6 +292,32 @@ class _ControllingPageState extends State<ControllingPage> {
         ),
       ),
     );
+  }
+
+  Color _getDeviceColor(String type) {
+    switch (type.toLowerCase()) {
+      case 'light':
+        return Colors.amber;
+      case 'ac':
+        return Colors.blue;
+      case 'fan':
+        return Colors.green;
+      default:
+        return Colors.purple;
+    }
+  }
+
+  IconData _getDeviceIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'light':
+        return Icons.lightbulb;
+      case 'ac':
+        return Icons.ac_unit;
+      case 'fan':
+        return Icons.mode_fan_off;
+      default:
+        return Icons.device_unknown;
+    }
   }
 
   Widget _buildSceneControls() {
@@ -332,12 +356,12 @@ class _ControllingPageState extends State<ControllingPage> {
           ],
         ),
         const SizedBox(height: 15),
-        _buildSceneButton(
-          'Night Mode',
-          Icons.nightlight_round,
-          const Color(0xFF0A5099),
-          _activateNightMode,
-        ),
+        // _buildSceneButton(
+        //   'Night Mode',
+        //   Icons.nightlight_round,
+        //   const Color(0xFF0A5099),
+        //   _activateNightMode,
+        // ),
       ],
     );
   }
@@ -376,16 +400,16 @@ class _ControllingPageState extends State<ControllingPage> {
 
   void _toggleAllDevices(bool status) {
     for (var device in devices) {
-      _toggleDevice(device['id'], status);
+      _toggleDevice(device.deviceId!, status);
     }
   }
 
   void _activateNightMode() {
     for (var device in devices) {
-      if (device['name'].toString().contains('Lampu')) {
-        _toggleDevice(device['id'], false);
-      } else if (device['name'].toString().contains('AC')) {
-        _toggleDevice(device['id'], true);
+      if (device.name.toLowerCase().contains('light')) {
+        _toggleDevice(device.deviceId!, false);
+      } else if (device.type.toLowerCase().contains('ac')) {
+        _toggleDevice(device.deviceId!, true);
       }
     }
   }

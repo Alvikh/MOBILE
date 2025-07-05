@@ -1,10 +1,10 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ta_mobile/routes.dart';
+import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
 
 class ApiEndpoints {
-  static const String baseUrl = 'http://192.168.1.14:8000/api';
+  static const String baseUrl = 'https://pey.my.id/api';
 
   static String get register => '/register';
   static String get login => '/login';
@@ -13,56 +13,132 @@ class ApiEndpoints {
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
-  ApiService._internal();
   factory ApiService() => _instance;
+  ApiService._internal() {
+    _initDio();
+  }
 
+  late Dio _dio;
   String? _token;
 
   String get baseUrl => ApiEndpoints.baseUrl;
+
+  void _initDio() {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 30),
+        contentType: 'application/json',
+        headers: {
+          'Accept': 'application/json',
+        },
+        responseType: ResponseType.json,
+      ),
+    );
+
+    _addInterceptors();
+  }
 
   Future<void> setToken(String token) async {
     _token = token;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
+    _updateDioHeaders();
+  }
+
+  Future<void> loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('auth_token');
+    _updateDioHeaders();
+  }
+
+  Future<void> clearToken() async {
+    _token = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    _updateDioHeaders();
+  }
+
+  void _updateDioHeaders() {
+    _dio.options.headers = {
+      'Accept': 'application/json',
+      if (_token != null) 'Authorization': 'Bearer $_token',
+    };
+  }
+
+  Future<Response> _refreshToken() async {
+    final refreshToken = await UserPreferencesService().getRefreshToken();
+    if (refreshToken == null) throw Exception('No refresh token available');
+
+    final response = await _dio.post(
+      '/refresh',
+      data: {'refresh_token': refreshToken},
+    );
+
+    if (response.data['success'] == true) {
+      await UserPreferencesService().saveTokens(
+        authToken: response.data['token'],
+        refreshToken: response.data['refresh_token'],
+      );
+      await setToken(response.data['token']);
+    }
+
+    return response;
+  }
+
+  void _addInterceptors() {
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        print('Request: ${options.method} ${options.path}');
+        print('Headers: ${options.headers}');
+        print('Data: ${options.data}');
+        return handler.next(options);
+      },
+      onResponse: (response, handler) {
+        print('Response: ${response.statusCode} ${response.data}');
+        return handler.next(response);
+      },
+      onError: (error, handler) async {
+        print('Error: ${error.response?.statusCode} ${error.message}');
+        if (error.response?.statusCode == 401) {
+          try {
+            await _refreshToken();
+            final request = error.requestOptions;
+            final opts = Options(
+              method: request.method,
+              headers: request.headers,
+            );
+            final response = await _dio.request(
+              request.path,
+              options: opts,
+              data: request.data,
+              queryParameters: request.queryParameters,
+            );
+            return handler.resolve(response);
+          } catch (e) {
+            await UserPreferencesService().clearUserData();
+            navigatorKey.currentState?.pushReplacementNamed(AppRoutes.login);
+            return handler.reject(error);
+          }
+        }
+        return handler.reject(error);
+      },
+    ));
   }
 
   String getToken() {
     return _token ?? "";
   }
 
-  /// Load token from local storage
-  Future<void> loadToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('auth_token');
-  }
-
-  /// Clear token from memory and storage
-  Future<void> clearToken() async {
-    _token = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-  }
-
-  /// Build headers for API request
-  Map<String, String> _buildHeaders(bool useToken) {
-    final headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json', // Important for Laravel API
-    };
-
-    if (useToken && _token != null) {
-      headers['Authorization'] = 'Bearer $_token';
-    }
-    print(headers);
-    return headers;
-  }
-
-  /// GET request
-  Future<dynamic> get(String endpoint, {bool useToken = true}) async {
+  Future<dynamic> get(String endpoint,
+      {Map<String, dynamic>? body, bool useToken = true}) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: _buildHeaders(useToken),
+      final response = await _dio.get(
+        endpoint,
+        data: body,
+        options: Options(headers: useToken ? null : {'Authorization': null}),
       );
       return _handleResponse(response);
     } catch (e) {
@@ -70,31 +146,27 @@ class ApiService {
     }
   }
 
-  /// POST request
   Future<dynamic> post(String endpoint, dynamic body,
       {bool useToken = true}) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: _buildHeaders(useToken),
-        body: jsonEncode(body),
+      final response = await _dio.post(
+        endpoint,
+        data: body,
+        options: Options(headers: useToken ? null : {'Authorization': null}),
       );
-      print(jsonEncode(body));
-      print(jsonEncode(response.body));
       return _handleResponse(response);
     } catch (e) {
       return _handleError(e);
     }
   }
 
-  /// PUT request
   Future<dynamic> put(String endpoint, dynamic body,
       {bool useToken = true}) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: _buildHeaders(useToken),
-        body: jsonEncode(body),
+      final response = await _dio.put(
+        endpoint,
+        data: body,
+        options: Options(headers: useToken ? null : {'Authorization': null}),
       );
       return _handleResponse(response);
     } catch (e) {
@@ -102,12 +174,11 @@ class ApiService {
     }
   }
 
-  /// DELETE request
   Future<dynamic> delete(String endpoint, {bool useToken = true}) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: _buildHeaders(useToken),
+      final response = await _dio.delete(
+        endpoint,
+        options: Options(headers: useToken ? null : {'Authorization': null}),
       );
       return _handleResponse(response);
     } catch (e) {
@@ -115,53 +186,42 @@ class ApiService {
     }
   }
 
-  /// Handle HTTP response
-  dynamic _handleResponse(http.Response response) {
-    print('Status Code: ${response.statusCode}');
-    print('Content-Type: ${response.headers['content-type']}');
-    print('Body: ${response.body}');
-
-    final contentType = response.headers['content-type'] ?? '';
-
-    // If not JSON, return error
-    if (!contentType.contains('application/json')) {
+  dynamic _handleResponse(Response response) {
+    if (response.statusCode != null &&
+        response.statusCode! >= 200 &&
+        response.statusCode! < 300) {
       return {
-        'success': false,
-        'message':
-            'Invalid response format: expected JSON but got $contentType',
+        'success': true,
+        'data': response.data,
         'statusCode': response.statusCode,
       };
+    } else {
+      return {
+        'success': false,
+        'message': response.data['message'] ?? 'Request failed',
+        'statusCode': response.statusCode,
+        'errors': response.data['errors'] ?? null,
+      };
     }
+  }
 
-    try {
-      final responseData = jsonDecode(response.body);
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
+  dynamic _handleError(dynamic error) {
+    if (error is DioException) {
+      if (error.response != null) {
         return {
-          'success': true,
-          'data': responseData,
-          'statusCode': response.statusCode,
+          'success': false,
+          'message': error.response?.data['message'] ?? 'Request failed',
+          'statusCode': error.response?.statusCode,
+          'errors': error.response?.data['errors'] ?? null,
         };
       } else {
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Request failed',
-          'statusCode': response.statusCode,
-          'errors': responseData['errors'] ?? null,
+          'message': error.message ?? 'Network error occurred',
+          'statusCode': null,
         };
       }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Failed to parse response: $e',
-        'statusCode': response.statusCode,
-      };
-    }
-  }
-
-  /// Handle unexpected errors
-  dynamic _handleError(dynamic error) {
-    if (error is ApiException) {
+    } else if (error is ApiException) {
       throw error;
     } else {
       return {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
+import 'package:ta_mobile/models/device.dart';
+import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/pages/device/add_device_page.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
 import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
@@ -25,37 +27,116 @@ class _MonitoringPageState extends State<MonitoringPage> {
   String temperature = '-';
   String humidity = '-';
 
-  final Map<String, List<double>> chartData = {
-    'Voltage': [],
-    'Current': [],
-    'Power': [],
-    'Energy': [],
-    'Frequency': [],
-    'Power Factor': [],
-    'Temperature': [],
-    'Humidity': [],
-  };
+  int currentDeviceIndex = 0;
+  late List<Device> monitoringDevices;
 
-  final Map<String, List<DateTime>> timestamps = {
-    'Voltage': [],
-    'Current': [],
-    'Power': [],
-    'Energy': [],
-    'Frequency': [],
-    'Power Factor': [],
-    'Temperature': [],
-    'Humidity': [],
-  };
+  final Map<String, Map<String, List<double>>> chartData = {};
+  final Map<String, Map<String, List<DateTime>>> timestamps = {};
 
   String selectedPeriod = 'Harian';
   final TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: true);
 
-  void _updateChartData(String key, double? value) {
+  @override
+  void initState() {
+    super.initState();
+
+    monitoringDevices =
+        User().devices.where((device) => device.type == 'monitoring').toList();
+
+    for (var device in monitoringDevices) {
+      chartData[device.deviceId] = {
+        'Voltage': [],
+        'Current': [],
+        'Power': [],
+        'Energy': [],
+        'Frequency': [],
+        'Power Factor': [],
+        'Temperature': [],
+        'Humidity': [],
+      };
+
+      timestamps[device.deviceId] = {
+        'Voltage': [],
+        'Current': [],
+        'Power': [],
+        'Energy': [],
+        'Frequency': [],
+        'Power Factor': [],
+        'Temperature': [],
+        'Humidity': [],
+      };
+    }
+
+    mqttService = MqttService(
+      onMessageReceived: (data) {
+        print('data: $data');
+        print('MQTT Message received: ${data['id']} - ${data['measured_at']}');
+        print(
+            'compare data: ${data['id']} == ${monitoringDevices[currentDeviceIndex].deviceId}');
+        if (monitoringDevices.isNotEmpty &&
+            data['id'] == monitoringDevices[currentDeviceIndex].deviceId) {
+          setState(() {
+            final String measuredAt = data['measured_at'] ?? '';
+
+            if (measuredAt.isNotEmpty) {
+              try {
+                final parts = measuredAt.split(' ');
+                if (parts.length == 2) {
+                  tanggal = parts[0];
+                  waktu = parts[1].length >= 5
+                      ? parts[1].substring(0, 5)
+                      : parts[1];
+                } else {
+                  tanggal = '-';
+                  waktu = '-';
+                }
+              } catch (e) {
+                tanggal = '-';
+                waktu = '-';
+                debugPrint('Error parsing measured_at: $e');
+              }
+            } else {
+              tanggal = '-';
+              waktu = '-';
+            }
+
+            voltage = _formatDouble(data['voltage']) ?? '-';
+            current = _formatDouble(data['current']) ?? '-';
+            power = _formatDouble(data['power']) ?? '-';
+            energy = _formatDouble(data['energy']) ?? '-';
+            frequency = _formatDouble(data['frequency']) ?? '-';
+            powerFactor = _formatDouble(data['power_factor']) ?? '-';
+            temperature = _formatDouble(data['temperature']) ?? '-';
+            humidity = _formatDouble(data['humidity']) ?? '-';
+
+            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
+                'Voltage', double.tryParse(voltage));
+            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
+                'Current', double.tryParse(current));
+            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
+                'Power', double.tryParse(power));
+            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
+                'Energy', double.tryParse(energy));
+            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
+                'Frequency', double.tryParse(frequency));
+            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
+                'Power Factor', double.tryParse(powerFactor));
+            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
+                'Temperature', double.tryParse(temperature));
+            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
+                'Humidity', double.tryParse(humidity));
+          });
+        }
+      },
+    );
+  }
+
+  void _updateChartData(String deviceId, String key, double? value) {
     if (value == null) return;
     final now = DateTime.now();
 
-    final data = chartData[key]!;
-    final timeData = timestamps[key]!;
+    final data = chartData[deviceId]![key]!;
+    final timeData = timestamps[deviceId]![key]!;
 
     if (data.length >= 20) {
       data.removeAt(0);
@@ -66,48 +147,40 @@ class _MonitoringPageState extends State<MonitoringPage> {
     timeData.add(now);
   }
 
-  @override
-  void initState() {
-    super.initState();
-    mqttService = MqttService(
-      broker: 'broker.hivemq.com', // Replace with your MQTT broker
-      onMessageReceived: (data) {
-        setState(() {
-          tanggal = data['tanggal'] ?? '-';
-          String fullWaktu = data['waktu'] ?? '-';
-          waktu = fullWaktu.length >= 5 ? fullWaktu.substring(0, 5) : fullWaktu;
-
-          voltage = data['tegangan']?.toString() ?? '-';
-          current = data['arus']?.toString() ?? '-';
-          power = data['daya']?.toString() ?? '-';
-          energy = data['energi']?.toString() ?? '-';
-          frequency = data['frequency']?.toString() ?? '-';
-          powerFactor = data['power_factor']?.toString() ?? '-';
-          temperature = data['suhu']?.toString() ?? '-';
-          humidity = data['kelembapan']?.toString() ?? '-';
-
-          _updateChartData('Voltage', double.tryParse(voltage));
-          _updateChartData('Current', double.tryParse(current));
-          _updateChartData('Power', double.tryParse(power));
-          _updateChartData('Energy', double.tryParse(energy));
-          _updateChartData('Frequency', double.tryParse(frequency));
-          _updateChartData('Power Factor', double.tryParse(powerFactor));
-          _updateChartData('Temperature', double.tryParse(temperature));
-          _updateChartData('Humidity', double.tryParse(humidity));
-        });
-      },
-    );
-    mqttService.connect();
+  String? _formatDouble(dynamic value) {
+    if (value == null) return null;
+    final numValue = value is num ? value : double.tryParse(value.toString());
+    if (numValue == null) return null;
+    return numValue.toStringAsFixed(2);
   }
 
   @override
   void dispose() {
-    mqttService.disconnect();
     super.dispose();
+  }
+
+  void _switchDevice(int index) {
+    if (index >= 0 && index < monitoringDevices.length) {
+      setState(() {
+        currentDeviceIndex = index;
+        tanggal = '-';
+        waktu = '-';
+        voltage = '-';
+        current = '-';
+        power = '-';
+        energy = '-';
+        frequency = '-';
+        powerFactor = '-';
+        temperature = '-';
+        humidity = '-';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool hasMonitoringDevice = monitoringDevices.isNotEmpty;
+    final totalMonitoringDevices = monitoringDevices.length;
     return Scaffold(
       backgroundColor: const Color(0xFF0A5099),
       body: Stack(
@@ -116,11 +189,9 @@ class _MonitoringPageState extends State<MonitoringPage> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.only(bottom: 80), // Space for navbar
+                  padding: const EdgeInsets.only(bottom: 80),
                   child: Stack(
                     children: [
-                      // Stack(children: [_buildLiveDataScroll()]),
                       Column(
                         children: [
                           _buildHeader(),
@@ -131,56 +202,134 @@ class _MonitoringPageState extends State<MonitoringPage> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Live Monitoring Data',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.bold,
+                            child: hasMonitoringDevice
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildDeviceSwitcher(),
+                                      const SizedBox(height: 15),
+                                      const Text(
+                                        'Live Monitoring Data',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontFamily: 'Poppins',
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 15),
+                                      _buildDateTimeCard(),
+                                      const SizedBox(height: 150),
+                                      _buildPeriodDropdown(),
+                                      const SizedBox(height: 20),
+                                      _buildVoltageCurrentChart(),
+                                      const SizedBox(height: 20),
+                                      _buildPowerEnergyChart(),
+                                      const SizedBox(height: 20),
+                                      _buildFrequencyPfRow(),
+                                      const SizedBox(height: 20),
+                                      _buildTempHumidityChart(),
+                                    ],
+                                  )
+                                : Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 40, horizontal: 20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade50,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                          color: Colors.orange.shade200),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        "Perangkat monitoring tidak tersedia, tolong daftarkan terlebih dahulu perangkat monitoring anda",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontFamily: 'Poppins',
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.orange,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 15),
-                                _buildDateTimeCard(),
-                                const SizedBox(height: 150),
-                                _buildPeriodDropdown(),
-                                const SizedBox(height: 20),
-                                _buildVoltageCurrentChart(),
-                                const SizedBox(height: 20),
-                                _buildPowerEnergyChart(),
-                                const SizedBox(height: 20),
-                                _buildFrequencyPfRow(),
-                                const SizedBox(height: 20),
-                                _buildTempHumidityChart(),
-                              ],
-                            ),
                           ),
                         ],
                       ),
-                      Positioned(
-                        top: MediaQuery.of(context).size.height * 0.55 - 60,
-                        child: _buildLiveDataScroll(),
-                        right: 0, // Adjust for navbar
-                        left: 0,
-                      ),
+                      if (hasMonitoringDevice && totalMonitoringDevices < 2)
+                        Positioned(
+                          top: MediaQuery.of(context).size.height * 0.55 - 60,
+                          child: _buildLiveDataScroll(),
+                          right: 0,
+                          left: 0,
+                        )
+                      else if (hasMonitoringDevice)
+                        Positioned(
+                          top: MediaQuery.of(context).size.height * 0.65 - 60,
+                          child: _buildLiveDataScroll(),
+                          right: 0,
+                          left: 0,
+                        )
                     ],
                   ),
                 ),
               ),
             ],
           ),
-
-          // Floating Navbar positioned at bottom
           const CustomFloatingNavbar(selectedIndex: 1),
         ],
       ),
     );
   }
 
-  // --------------------- Chart Widgets ---------------------
+  Widget _buildDeviceSwitcher() {
+    if (monitoringDevices.length <= 1) {
+      return Container();
+    }
+
+    return Column(
+      children: [
+        Text(
+          monitoringDevices[currentDeviceIndex].name,
+          style: const TextStyle(
+              fontSize: 18,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0A5099)),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back_ios, size: 20),
+              onPressed: currentDeviceIndex > 0
+                  ? () => _switchDevice(currentDeviceIndex - 1)
+                  : null,
+            ),
+            Text(
+              '${currentDeviceIndex + 1}/${monitoringDevices.length}',
+              style: const TextStyle(
+                fontSize: 16,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.arrow_forward_ios, size: 20),
+              onPressed: currentDeviceIndex < monitoringDevices.length - 1
+                  ? () => _switchDevice(currentDeviceIndex + 1)
+                  : null,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildVoltageCurrentChart() {
+    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -219,7 +368,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
             series: [
               LineSeries<ChartData, DateTime>(
                 name: 'Voltage',
-                dataSource: _getChartData('Voltage'),
+                dataSource: _getChartData(deviceId, 'Voltage'),
                 xValueMapper: (data, _) => data.time,
                 yValueMapper: (data, _) => data.value,
                 color: const Color(0xFF0A5099),
@@ -227,7 +376,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               ),
               LineSeries<ChartData, DateTime>(
                 name: 'Current',
-                dataSource: _getChartData('Current'),
+                dataSource: _getChartData(deviceId, 'Current'),
                 xValueMapper: (data, _) => data.time,
                 yValueMapper: (data, _) => data.value,
                 color: Colors.red,
@@ -242,6 +391,8 @@ class _MonitoringPageState extends State<MonitoringPage> {
   }
 
   Widget _buildPowerEnergyChart() {
+    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -263,7 +414,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
             series: [
               LineSeries<ChartData, DateTime>(
                 name: 'Power',
-                dataSource: _getChartData('Power'),
+                dataSource: _getChartData(deviceId, 'Power'),
                 xValueMapper: (data, _) => data.time,
                 yValueMapper: (data, _) => data.value,
                 color: Colors.green,
@@ -271,7 +422,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               ),
               ColumnSeries<ChartData, DateTime>(
                 name: 'Energy',
-                dataSource: _getChartData('Energy'),
+                dataSource: _getChartData(deviceId, 'Energy'),
                 xValueMapper: (data, _) => data.time,
                 yValueMapper: (data, _) => data.value,
                 color: Colors.purple,
@@ -284,6 +435,12 @@ class _MonitoringPageState extends State<MonitoringPage> {
   }
 
   Widget _buildFrequencyPfRow() {
+    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+    final currentFrequency =
+        chartData[deviceId]?['Frequency']?.isNotEmpty ?? false
+            ? chartData[deviceId]!['Frequency']!.last
+            : 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -320,16 +477,14 @@ class _MonitoringPageState extends State<MonitoringPage> {
                       ],
                       pointers: [
                         NeedlePointer(
-                          value: chartData['Frequency']?.isNotEmpty ?? false
-                              ? chartData['Frequency']!.last
-                              : 0,
+                          value: currentFrequency.toDouble(),
                           enableAnimation: true,
                         ),
                       ],
                       annotations: [
                         GaugeAnnotation(
                           widget: Text(
-                            'Frequency\n${chartData['Frequency']?.isNotEmpty ?? false ? chartData['Frequency']!.last.toStringAsFixed(1) : '0'} Hz',
+                            'Frequency\n${currentFrequency.toStringAsFixed(1)} Hz',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 12,
@@ -356,7 +511,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   series: [
                     LineSeries<ChartData, DateTime>(
                       name: 'Power Factor',
-                      dataSource: _getChartData('Power Factor'),
+                      dataSource: _getChartData(deviceId, 'Power Factor'),
                       xValueMapper: (data, _) => data.time,
                       yValueMapper: (data, _) => data.value,
                       color: Colors.amber,
@@ -373,6 +528,8 @@ class _MonitoringPageState extends State<MonitoringPage> {
   }
 
   Widget _buildTempHumidityChart() {
+    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -394,7 +551,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
             series: [
               LineSeries<ChartData, DateTime>(
                 name: 'Temperature (°C)',
-                dataSource: _getChartData('Temperature'),
+                dataSource: _getChartData(deviceId, 'Temperature'),
                 xValueMapper: (data, _) => data.time,
                 yValueMapper: (data, _) => data.value,
                 color: Colors.red,
@@ -402,7 +559,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               ),
               LineSeries<ChartData, DateTime>(
                 name: 'Humidity (%)',
-                dataSource: _getChartData('Humidity'),
+                dataSource: _getChartData(deviceId, 'Humidity'),
                 xValueMapper: (data, _) => data.time,
                 yValueMapper: (data, _) => data.value,
                 color: Colors.blue,
@@ -415,16 +572,14 @@ class _MonitoringPageState extends State<MonitoringPage> {
     );
   }
 
-  List<ChartData> _getChartData(String key) {
-    final values = chartData[key] ?? [];
-    final times = timestamps[key] ?? [];
-
+  List<ChartData> _getChartData(String deviceId, String key) {
+    final values = chartData[deviceId]?[key] ?? [];
+    final times = timestamps[deviceId]?[key] ?? [];
     return List.generate(values.length, (index) {
       return ChartData(times[index], values[index]);
     });
   }
 
-  // --------------------- UI Widgets ---------------------
   Widget _buildPeriodDropdown() {
     return Row(
       children: [
@@ -609,7 +764,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          const SizedBox(width: 8), // Padding awal
+          const SizedBox(width: 8),
           ...dataList.map((item) {
             return Container(
               width: 120,
@@ -649,7 +804,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               ),
             );
           }).toList(),
-          const SizedBox(width: 8), // Padding akhir
+          const SizedBox(width: 8),
         ],
       ),
     );

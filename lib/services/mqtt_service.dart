@@ -9,142 +9,162 @@ typedef OnMessageReceived = void Function(Map<String, dynamic> message);
 typedef OnConnectionStatusChanged = void Function(MqttConnectionState state);
 
 class MqttService {
-  final MqttServerClient client;
-  final String monitoringTopic = 'iot/monitoring';
-  final String controlTopicPrefix = 'iot/control/';
-  final OnMessageReceived? onMessageReceived;
-  final OnConnectionStatusChanged? onConnectionStatusChanged;
+  static final MqttService _instance = MqttService._internal();
+  MqttServerClient? client;
+  final String _controlTopicPrefix = 'smartpower/device/control';
+  // bool isConnected = false;
+  factory MqttService({
+    OnMessageReceived? onMessageReceived,
+    OnConnectionStatusChanged? onConnectionStatusChanged,
+    List<String> topics = const [
+      'iot/monitoring',
+      'smartpower/device/control',
+      'smartpower/device/status',
+      'smartpower/device/alert',
+    ],
+  }) {
+    _instance.onMessageReceived = onMessageReceived;
+    _instance.onConnectionStatusChanged = onConnectionStatusChanged;
+    _instance.topics = topics;
 
+    if (_instance.client == null) {
+      _instance.client = MqttServerClient(_mqttBroker, _generateClientId());
+      _instance._setupClient();
+    }
+    return _instance;
+  }
+
+  MqttService._internal();
+
+  static const String _mqttBroker = 'broker.hivemq.com';
+  static const int _mqttPort = 1883;
+  late List<String> topics;
+  OnMessageReceived? onMessageReceived;
+  OnConnectionStatusChanged? onConnectionStatusChanged;
   final StreamController<Map<String, dynamic>> _messageStreamController =
       StreamController.broadcast();
+
   Stream<Map<String, dynamic>> get messageStream =>
       _messageStreamController.stream;
 
-  MqttService({
-    required String broker,
-    this.onMessageReceived,
-    this.onConnectionStatusChanged,
-  }) : client = MqttServerClient(
-            broker, 'flutter_client_${DateTime.now().millisecondsSinceEpoch}') {
-    _setupClient();
+  static String _generateClientId() {
+    return 'flutter_client_${DateTime.now().millisecondsSinceEpoch}';
   }
 
   void _setupClient() {
-    client.port = 1883;
-    client.keepAlivePeriod = 20;
-    client.logging(on: false);
-    client.onConnected = _onConnected;
-    client.onDisconnected = _onDisconnected;
-    client.onSubscribed = _onSubscribed;
-    client.pongCallback = _onPong;
+    client!.port = _mqttPort;
+    client!.keepAlivePeriod = 30;
+    client!.logging(on: false);
 
-    client.connectionMessage = MqttConnectMessage()
-        .withClientIdentifier(client.clientIdentifier)
+    client!.onConnected = _onConnected;
+    client!.onDisconnected = _onDisconnected;
+    client!.onSubscribed = _onSubscribed;
+    client!.pongCallback = _onPong;
+
+    client!.connectionMessage = MqttConnectMessage()
+        .withClientIdentifier(client!.clientIdentifier)
         .startClean()
+        .withWillTopic('${client!.clientIdentifier}/status')
+        .withWillMessage('offline')
         .withWillQos(MqttQos.atLeastOnce);
   }
 
-  Future<bool> connect() async {
-    try {
-      await client.connect();
-      if (client.connectionStatus!.state == MqttConnectionState.connected) {
-        debugPrint('✅ MQTT Connected');
-        _subscribeToTopics();
-        _listenForMessages();
-        onConnectionStatusChanged?.call(MqttConnectionState.connected);
-        return true;
+  Future<bool> connect({int maxRetries = 3, int retryDelay = 2}) async {
+    if (client == null) return false;
+
+    int attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        debugPrint('Connecting to MQTT broker (attempt ${attempts + 1})...');
+        await client!.connect();
+
+        if (client!.connectionStatus?.state == MqttConnectionState.connected) {
+          _subscribeToTopics();
+          _listenForMessages();
+          onConnectionStatusChanged?.call(MqttConnectionState.connected);
+          return true;
+        }
+      } catch (e) {
+        await Future.delayed(Duration(seconds: retryDelay));
       }
-      debugPrint('❌ MQTT Failed to connect: ${client.connectionStatus!.state}');
-      onConnectionStatusChanged?.call(client.connectionStatus!.state);
-      return false;
-    } catch (e) {
-      debugPrint('MQTT Connection Exception: $e');
-      client.disconnect();
-      onConnectionStatusChanged?.call(MqttConnectionState.disconnected);
-      return false;
+      attempts++;
     }
-  }
-
-  void _onConnected() {
-    debugPrint('✅ MQTT Client Connected');
-  }
-
-  void _onDisconnected() {
-    debugPrint('❌ MQTT Client Disconnected');
     onConnectionStatusChanged?.call(MqttConnectionState.disconnected);
+    return false;
   }
 
-  void _onSubscribed(String topic) {
-    debugPrint('🔔 Subscribed to $topic');
+  bool get isConnected {
+    return client?.connectionStatus?.state == MqttConnectionState.connected;
   }
 
-  void _onPong() {
-    debugPrint('🏓 Pong received');
-  }
+  void _onConnected() => debugPrint('MQTT connection established');
+  void _onDisconnected() =>
+      onConnectionStatusChanged?.call(MqttConnectionState.disconnected);
+  void _onSubscribed(String topic) => debugPrint('Subscribed to topic: $topic');
+  void _onPong() => debugPrint('Ping response received');
 
   void _subscribeToTopics() {
-    client.subscribe(monitoringTopic, MqttQos.atLeastOnce);
+    for (String t in topics) {
+      client!.subscribe(t, MqttQos.atLeastOnce);
+    }
   }
 
   void _listenForMessages() {
-    client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
+    client!.updates?.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
       for (var message in messages) {
-        final payload = message.payload as MqttPublishMessage;
-        final topic = message.topic;
-        final content =
-            MqttPublishPayload.bytesToStringAsString(payload.payload.message);
-
         try {
-          final jsonData = jsonDecode(content);
-          _handleIncomingMessage(topic, jsonData);
+          final payload = message.payload as MqttPublishMessage;
+          final content =
+              MqttPublishPayload.bytesToStringAsString(payload.payload.message);
+          final jsonData = jsonDecode(content) as Map<String, dynamic>;
+          _handleIncomingMessage(message.topic, jsonData);
         } catch (e) {
-          debugPrint(
-              'Error parsing message from topic "$topic": $e, content: "$content"');
+          debugPrint('Error processing message: $e');
         }
       }
-    });
+    }, onError: (error) => debugPrint('Message stream error: $error'));
   }
 
   void _handleIncomingMessage(String topic, Map<String, dynamic> message) {
-    if (topic == monitoringTopic) {
-      onMessageReceived?.call(message);
-      _messageStreamController.add(message);
-    }
+    onMessageReceived?.call(message);
+    _messageStreamController.add(message);
   }
 
-  Future<void> publishControlCommand(String deviceId, String command) async {
-    final topic = '$controlTopicPrefix$deviceId';
-    final builder = MqttClientPayloadBuilder();
-    builder.addString(jsonEncode(
-        {'command': command, 'timestamp': DateTime.now().toIso8601String()}));
-
-    try {
-      client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-      debugPrint('📤 Published command "$command" to $topic');
-    } catch (e) {
-      debugPrint('Error publishing command: $e');
-      throw Exception('Failed to publish command');
-    }
+  Future<void> publishControlCommand(
+      String deviceId, String action, String state) async {
+    await _publish(_controlTopicPrefix, {
+      'id': deviceId,
+      'action': action,
+      'state': state,
+    });
   }
 
   Future<void> publish(String topic, Map<String, dynamic> message) async {
-    final builder = MqttClientPayloadBuilder();
-    builder.addString(jsonEncode(message));
+    await _publish(topic, message);
+  }
 
+  Future<void> _publish(String topic, Map<String, dynamic> message) async {
     try {
-      client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-      debugPrint('📤 Published message to "$topic": ${jsonEncode(message)}');
+      final builder = MqttClientPayloadBuilder();
+      builder.addString(jsonEncode(message));
+      client!.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
     } catch (e) {
-      debugPrint('Error publishing to "$topic": $e');
-      throw Exception('Failed to publish message');
+      throw Exception('Failed to publish message: $e');
     }
   }
 
   Future<void> disconnect() async {
-    _messageStreamController.close();
-    client.disconnect();
+    await _messageStreamController.close();
+    client?.disconnect();
   }
 
-  MqttConnectionState get connectionState =>
-      client.connectionStatus?.state ?? MqttConnectionState.disconnected;
+  MqttConnectionState get connectionState {
+    return client?.connectionStatus?.state ?? MqttConnectionState.disconnected;
+  }
+
+  void unsubscribe(String topic) {
+    if (client?.connectionStatus?.state == MqttConnectionState.connected) {
+      client!.unsubscribe(topic);
+    }
+  }
 }

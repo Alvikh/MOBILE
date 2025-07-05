@@ -49,12 +49,10 @@ class _EditProfileModalState extends State<EditProfileModal> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      final updatedUser = await _userService.updateProfile(
+      final response = await _userService.updateProfile(
         userId: User().id.toString(),
         name: _nameController.text,
         email: _emailController.text,
@@ -63,27 +61,26 @@ class _EditProfileModalState extends State<EditProfileModal> {
             _addressController.text.isNotEmpty ? _addressController.text : null,
       );
 
-      // Update the current user data
-      User().updateFromJson(updatedUser.toJson());
+      // Ensure response is in the correct format
+      if (response is! Map<String, dynamic>) {
+        throw Exception('Invalid response format from server');
+      }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
-        );
-        Navigator.of(context).pop();
-      }
+      // Update the singleton User instance
+      User().updateFromJson(response);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully')),
+      );
+      Navigator.pop(context);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile: $e')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

@@ -1,33 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/services/device_service.dart';
+import 'package:ta_mobile/services/provider/user_notifier.dart'
+    show userProvider;
 import 'package:ta_mobile/widgets/custom_text_field.dart';
 
-class AddDevicePage extends StatefulWidget {
+class AddDevicePage extends ConsumerStatefulWidget {
   const AddDevicePage({Key? key}) : super(key: key);
 
   @override
-  _AddDevicePageState createState() => _AddDevicePageState();
+  ConsumerState<AddDevicePage> createState() => _AddDevicePageState();
 }
 
-class _AddDevicePageState extends State<AddDevicePage> {
+class _AddDevicePageState extends ConsumerState<AddDevicePage> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _deviceIdController;
+  late final TextEditingController _typeController;
+  late final TextEditingController _buildingController;
   final _formKey = GlobalKey<FormState>();
-  final DeviceService _deviceService = DeviceService();
-
-  // Form controllers
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _deviceIdController = TextEditingController();
-  final TextEditingController _typeController = TextEditingController();
-  final TextEditingController _buildingController = TextEditingController();
   DateTime? _installationDate;
   bool _isLoading = false;
 
-  // Available device types
   final List<String> _deviceTypes = [
-    'Monitoring Device',
-    'Control Device',
+    'monitoring',
+    'control',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _deviceIdController = TextEditingController();
+    _typeController = TextEditingController();
+    _buildingController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _deviceIdController.dispose();
+    _typeController.dispose();
+    _buildingController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -39,13 +55,13 @@ class _AddDevicePageState extends State<AddDevicePage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2196F3), // header background
-              onPrimary: Colors.white, // header text
-              onSurface: Colors.black87, // body text
+              primary: Color(0xFF0A5099),
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2196F3), // button text
+                foregroundColor: const Color(0xFF0A5099),
               ),
             ),
           ),
@@ -64,92 +80,96 @@ class _AddDevicePageState extends State<AddDevicePage> {
     if (!_formKey.currentState!.validate()) return;
     if (_installationDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select installation date'),
+        SnackBar(
+          content: Text(
+            'Please select installation date',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10)),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      final newDevice = Device(
+      final deviceService = ref.read(deviceServiceProvider);
+      final user = ref.read(userProvider);
+
+      await deviceService.createDevice(
         name: _nameController.text,
         deviceId: _deviceIdController.text,
         type: _typeController.text,
         building: _buildingController.text,
         installationDate: _installationDate!,
+        status: 'active',
       );
-
-      await _deviceService.addDevice(newDevice);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Device added successfully'),
+          SnackBar(
+            content: Text(
+              'Device added successfully',
+              style: TextStyle(fontFamily: 'Poppins'),
+            ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
         );
-        Navigator.of(context).pop(true);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to add device: $e'),
+            content: Text(
+              'Error: ${e.toString()}',
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF1F4F9),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           'Add New Device',
           style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
             color: Colors.white,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF2196F3),
         elevation: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(15),
-          ),
-        ),
+        backgroundColor: const Color(0xFF0A5099),
         actions: [
           IconButton(
-            icon: const Icon(Icons.save, color: Colors.white, size: 26),
+            icon: const Icon(Icons.save, color: Colors.white),
             onPressed: _isLoading ? null : _submitForm,
           ),
         ],
@@ -163,187 +183,174 @@ class _AddDevicePageState extends State<AddDevicePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 10),
-                  // Device Name
-                  CustomTextField(
-                    label: 'Device Name',
-                    controller: _nameController,
-                    iconColor: const Color(0xFF2196F3),
-                    borderColor: Colors.grey[300]!,
-                    focusedBorderColor: const Color(0xFF2196F3),
-                    textColor: Colors.black87,
-                    labelColor: Colors.grey[600]!,
-                    prefixIcon: Icons.devices,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Device ID
-                  CustomTextField(
-                    label: 'Device ID',
-                    controller: _deviceIdController,
-                    iconColor: const Color(0xFF2196F3),
-                    borderColor: Colors.grey[300]!,
-                    focusedBorderColor: const Color(0xFF2196F3),
-                    textColor: Colors.black87,
-                    labelColor: Colors.grey[600]!,
-                    prefixIcon: Icons.confirmation_number,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Device Type (Dropdown)
-                  DropdownButtonFormField<String>(
-                    value: _typeController.text.isEmpty
-                        ? null
-                        : _typeController.text,
-                    decoration: InputDecoration(
-                      labelText: 'Device Type',
-                      labelStyle: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                      prefixIcon:
-                          const Icon(Icons.category, color: Color(0xFF2196F3)),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey[300]!),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: Color(0xFF2196F3), width: 1.5),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 15,
-                      ),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
                     ),
-                    items: _deviceTypes.map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(
-                          value,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 16,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        _typeController.text = value;
-                      }
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please select device type';
-                      }
-                      return null;
-                    },
-                    dropdownColor: Colors.white,
-                    icon: const Icon(Icons.arrow_drop_down,
-                        color: Color(0xFF2196F3)),
-                    style: const TextStyle(color: Colors.black87),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Building
-                  CustomTextField(
-                    label: 'Building',
-                    controller: _buildingController,
-                    iconColor: const Color(0xFF2196F3),
-                    borderColor: Colors.grey[300]!,
-                    focusedBorderColor: const Color(0xFF2196F3),
-                    textColor: Colors.black87,
-                    labelColor: Colors.grey[600]!,
-                    prefixIcon: Icons.location_city,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Installation Date
-                  InkWell(
-                    onTap: () => _selectDate(context),
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Installation Date',
-                        labelStyle: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
-                        prefixIcon: const Icon(Icons.calendar_today,
-                            color: Color(0xFF2196F3)),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Color(0xFF2196F3), width: 1.5),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 15,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
                         children: [
-                          Text(
-                            _installationDate == null
-                                ? 'Select date'
-                                : DateFormat('yyyy-MM-dd')
-                                    .format(_installationDate!),
-                            style: TextStyle(
-                              color: _installationDate == null
-                                  ? Colors.grey[500]
-                                  : Colors.black87,
-                              fontSize: 16,
+                          CustomTextField(
+                            label: 'Device Name',
+                            controller: _nameController,
+                            prefixIcon: Icons.devices_other,
+                            iconColor: const Color(0xFF0A5099),
+                          ),
+                          const SizedBox(height: 20),
+                          CustomTextField(
+                            label: 'Device ID',
+                            controller: _deviceIdController,
+                            prefixIcon: Icons.confirmation_number,
+                            iconColor: const Color(0xFF0A5099),
+                          ),
+                          const SizedBox(height: 20),
+                          DropdownButtonFormField<String>(
+                            value: _typeController.text.isEmpty
+                                ? null
+                                : _typeController.text,
+                            items: _deviceTypes.map((value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(
+                                  value.capitalize(),
+                                  style: const TextStyle(fontFamily: 'Poppins'),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) => setState(() {
+                              if (value != null) _typeController.text = value;
+                            }),
+                            decoration: InputDecoration(
+                              labelText: 'Device Type',
+                              labelStyle: const TextStyle(
+                                fontFamily: 'Poppins',
+                                color: Colors.grey,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.category,
+                                color: const Color(0xFF0A5099),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF0A5099),
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 15,
+                                horizontal: 15,
+                              ),
+                            ),
+                            style: const TextStyle(fontFamily: 'Poppins'),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select device type';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          CustomTextField(
+                            label: 'Building',
+                            controller: _buildingController,
+                            prefixIcon: Icons.location_city,
+                            iconColor: const Color(0xFF0A5099),
+                          ),
+                          const SizedBox(height: 20),
+                          InkWell(
+                            onTap: () => _selectDate(context),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: 'Installation Date',
+                                labelStyle: const TextStyle(
+                                  fontFamily: 'Poppins',
+                                  color: Colors.grey,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.calendar_today,
+                                  color: const Color(0xFF0A5099),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide:
+                                      const BorderSide(color: Colors.grey),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide:
+                                      const BorderSide(color: Colors.grey),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF0A5099),
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 15,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    _installationDate == null
+                                        ? 'Select date'
+                                        : DateFormat('yyyy-MM-dd')
+                                            .format(_installationDate!),
+                                    style:
+                                        const TextStyle(fontFamily: 'Poppins'),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          const Icon(Icons.arrow_drop_down,
-                              color: Color(0xFF2196F3)),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 30),
-
-                  // Submit Button
                   SizedBox(
-                    height: 52,
+                    height: 50,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _submitForm,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2196F3),
+                        backgroundColor: const Color(0xFF0A5099),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        elevation: 3,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shadowColor: const Color(0xFF2196F3).withOpacity(0.3),
+                        elevation: 2,
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                              width: 24,
-                              height: 24,
+                              width: 20,
+                              height: 20,
                               child: CircularProgressIndicator(
-                                strokeWidth: 3,
-                                valueColor:
-                                    AlwaysStoppedAnimation(Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white,
                               ),
                             )
                           : const Text(
                               'SAVE DEVICE',
                               style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
                                 color: Colors.white,
-                                letterSpacing: 0.5,
                               ),
                             ),
                     ),
@@ -352,11 +359,14 @@ class _AddDevicePageState extends State<AddDevicePage> {
               ),
             ),
           ),
-
-          // Floating Navbar
-          // const CustomFloatingNavbar(selectedIndex: 1),
         ],
       ),
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }

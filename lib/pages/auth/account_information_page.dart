@@ -13,7 +13,7 @@ class AccountInformationPage extends StatelessWidget {
   final TextEditingController addressController = TextEditingController();
 
   Future<void> handleSignUp(BuildContext context) async {
-    final result = await AccountService.saveAccountInfo(
+    final result = await AccountService.updateProfile(
       name: nameController.text,
       phone: phoneController.text,
       email: emailController.text,

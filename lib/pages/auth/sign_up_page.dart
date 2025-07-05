@@ -21,7 +21,6 @@ class SignUpPage extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Menggunakan CustomHeader dengan tombol back yang mengarah ke WelcomePage
           CustomHeader(
             title: "Sign Up",
             onBack: () {
