@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ta_mobile/pages/account/account_page.dart';
 import 'package:ta_mobile/pages/controlling/controlling_page.dart';
 import 'package:ta_mobile/pages/guide/user_guide_page.dart';
-import 'package:ta_mobile/pages/home/home_page.dart';
+// import 'package:ta_mobile/pages/home/home_page.dart';
 import 'package:ta_mobile/pages/monitoring/monitoring_page.dart';
 
 class CustomFloatingNavbar extends StatelessWidget {
@@ -34,7 +34,7 @@ class CustomFloatingNavbar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(Icons.home, "Home", 0, context, HomePage()),
+            // _buildNavItem(Icons.home, "Home", 0, context, HomePage()),
             _buildNavItem(Icons.monitor_heart, "Monitoring", 1, context,
                 MonitoringPage()),
             _buildNavItem(

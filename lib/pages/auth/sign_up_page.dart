@@ -76,7 +76,7 @@ class SignUpPage extends StatelessWidget {
                       return;
                     }
 
-                    final result = await AuthService.signUp(email, password);
+                    final result = await AuthService.signUp(email, password, confirmPassword);
                     print(result);
 
                     if (result['success']) {

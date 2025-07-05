@@ -6,13 +6,15 @@ import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
 
 class AuthService {
   static Future<Map<String, dynamic>> signUp(
-      String email, String password) async {
+      String email, String password,String confirmPassword,
+) async {
     try {
       final response = await ApiService().post(
         '/register',
         {
           "email": email,
           "password": password,
+          "confirmPassword": confirmPassword,
         },
         useToken: false,
       );

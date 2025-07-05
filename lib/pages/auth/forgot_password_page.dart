@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/pages/home/home_page.dart';
 import 'package:ta_mobile/widgets/custom_bottom_container.dart';
 import 'package:ta_mobile/widgets/custom_elevated_button.dart';
@@ -11,8 +12,10 @@ class ForgotPasswordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context);
+    
     return Scaffold(
-      backgroundColor: Colors.white, // Warna latar belakang diperbarui
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Background Top Circle
@@ -24,19 +27,19 @@ class ForgotPasswordPage extends StatelessWidget {
               width: double.infinity,
               height: 180,
               decoration: BoxDecoration(
-                color: Color(0xFF1AB9BF),
-                borderRadius: BorderRadius.only(
+                color: const Color(0xFF1AB9BF),
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(100),
                   bottomRight: Radius.circular(100),
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.only(top: 50), // Menyesuaikan posisi teks
+                padding: const EdgeInsets.only(top: 50),
                 child: Center(
                   child: Text(
-                    "Forgot Password",
+                    s!.forgotPasswordTitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -51,41 +54,40 @@ class ForgotPasswordPage extends StatelessWidget {
           CustomBottomContainer(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment:
-                  CrossAxisAlignment.center, // Perbaikan di sini
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Forgot Password Info Text
                 Text(
-                  "Forgot password?",
-                  style: TextStyle(
+                  s.forgotPasswordHeader,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.bold,
                   ),
-                  textAlign: TextAlign.center, // Pastikan tetap center
+                  textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 25),
+                const SizedBox(height: 25),
                 Text(
-                  "We will send a link to reset your password to your email.",
-                  style: TextStyle(
+                  s.forgotPasswordDescription,
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
                     fontFamily: 'Poppins',
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 35),
+                const SizedBox(height: 35),
 
                 CustomTextField(
-                  label: "Email *",
+                  label: "${s.emailLabel} *",
                   controller: emailController,
                 ),
-                SizedBox(height: 25),
+                const SizedBox(height: 25),
 
                 // Send Button
                 CustomElevatedButton(
-                  text: "Send",
+                  text: s.send,
                   onPressed: () {
                     Navigator.push(
                       context,

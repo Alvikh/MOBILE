@@ -17,6 +17,10 @@ dependencies:
   syncfusion_flutter_charts: ^30.1.37
   intl: ^0.20.2
   syncfusion_flutter_gauges: ^30.1.37
+  flutter_localizations:
+    sdk: flutter
+  image_picker: ^1.1.0
+  fl_chart: ^1.0.0
 
 dev_dependencies:
   flutter_test:
@@ -31,22 +35,30 @@ flutter:
   assets:
     - assets/LOGO.png
     - assets/ICON2.png
+    - assets/images/default_avatar.png
 
   fonts:
     - family: Inter24
       fonts:
         - asset: assets/fonts/Inter_24pt-ExtraBold.ttf
           weight: 800
-
     - family: Inter18
       fonts:
         - asset: assets/fonts/Inter_18pt-ExtraBold.ttf
           weight: 800
-
     - family: Poppins
       fonts:
         - asset: assets/fonts/Poppins-ExtraBold.ttf
           weight: 800
+
+  generate: true
+
+l10n:
+  arb-dir: lib/l10n
+  template-arb-file: app_en.arb
+  output-localization-file: s.dart
+  output-class: S
+
 
 flutter_icons:
   xandroid: true
@@ -65,3 +77,4 @@ flutter_launcher_icons:
 
 flutter_launcher_name:
   name: "Smart Power Management"
+

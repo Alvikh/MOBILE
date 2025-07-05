@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
@@ -26,13 +27,10 @@ class _ControllingPageState extends State<ControllingPage> {
         .devices
         .where((device) => device.type.toLowerCase() == 'control')
         .toList();
-    // mqttService.connect();
   }
 
   @override
   void dispose() {
-    // mqttService.disconnect();
-
     super.dispose();
   }
 
@@ -48,6 +46,7 @@ class _ControllingPageState extends State<ControllingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
     final activeDevices = devices.where((d) => d.status == 'active').length;
 
     return Scaffold(
@@ -62,15 +61,15 @@ class _ControllingPageState extends State<ControllingPage> {
                     padding: const EdgeInsets.only(bottom: 100),
                     child: Column(
                       children: [
-                        _buildHeader(activeDevices),
+                        _buildHeader(context, activeDevices),
                         Padding(
                           padding: const EdgeInsets.all(20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Device Control',
-                                style: TextStyle(
+                              Text(
+                                s.deviceControl,
+                                style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w700,
                                   fontFamily: 'Poppins',
@@ -81,30 +80,58 @@ class _ControllingPageState extends State<ControllingPage> {
                               devices.isEmpty
                                   ? Container(
                                       width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 40, horizontal: 20),
+                                      padding: const EdgeInsets.all(24),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
-                                            color: Colors.grey[300]!),
-                                      ),
-                                      child: const Center(
-                                        child: Text(
-                                          "Anda tidak memiliki perangkat kontrol.\nTambahkan perangkat control terlebih dahulu.",
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.black54,
-                                            fontFamily: 'Poppins',
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          color: Colors.grey[300]!,
+                                          width: 1.5,
                                         ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.1),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 6),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.devices_other_rounded,
+                                            color: Colors.blueGrey.shade400,
+                                            size: 48,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            s.noControlDeviceTitle,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontFamily: 'Poppins',
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            s.noControlDeviceSubtitle,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontFamily: 'Poppins',
+                                              fontWeight: FontWeight.w400,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     )
-                                  : _buildDeviceGrid(),
+                                  : _buildDeviceGrid(context),
                               const SizedBox(height: 30),
-                              _buildSceneControls(),
+                              _buildSceneControls(context),
                             ],
                           ),
                         ),
@@ -121,7 +148,9 @@ class _ControllingPageState extends State<ControllingPage> {
     );
   }
 
-  Widget _buildHeader(int activeDevices) {
+  Widget _buildHeader(BuildContext context, int activeDevices) {
+    final s = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.fromLTRB(25, 40, 25, 30),
       decoration: BoxDecoration(
@@ -142,15 +171,13 @@ class _ControllingPageState extends State<ControllingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 50,
-          ),
+          const SizedBox(height: 50),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Smart Home',
-                style: TextStyle(
+              Text(
+                s.smartHomeTitle,
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -158,8 +185,7 @@ class _ControllingPageState extends State<ControllingPage> {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -171,7 +197,7 @@ class _ControllingPageState extends State<ControllingPage> {
                         size: 16, color: Colors.white.withOpacity(0.9)),
                     const SizedBox(width: 6),
                     Text(
-                      '$activeDevices Active',
+                      s.statusActive.replaceFirst('{count}', activeDevices.toString()),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -186,7 +212,7 @@ class _ControllingPageState extends State<ControllingPage> {
           ),
           const SizedBox(height: 10),
           Text(
-            'Control your smart devices',
+            s.smartHomeSubtitle,
             style: TextStyle(
               fontSize: 16,
               color: Colors.white.withOpacity(0.9),
@@ -198,7 +224,9 @@ class _ControllingPageState extends State<ControllingPage> {
     );
   }
 
-  Widget _buildDeviceGrid() {
+  Widget _buildDeviceGrid(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
+    
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -209,11 +237,12 @@ class _ControllingPageState extends State<ControllingPage> {
         childAspectRatio: 0.8,
       ),
       itemCount: devices.length,
-      itemBuilder: (context, index) => _buildDeviceCard(devices[index]),
+      itemBuilder: (context, index) => _buildDeviceCard(context, devices[index]),
     );
   }
 
-  Widget _buildDeviceCard(Device device) {
+  Widget _buildDeviceCard(BuildContext context, Device device) {
+    final s = AppLocalizations.of(context)!;
     final isActive = device.state == true;
     final deviceColor = _getDeviceColor(device.type);
 
@@ -277,7 +306,7 @@ class _ControllingPageState extends State<ControllingPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    isActive ? 'ON' : 'OFF',
+                    isActive ? s.statusOn : s.statusOff,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -289,6 +318,93 @@ class _ControllingPageState extends State<ControllingPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSceneControls(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          s.quickScenes,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Poppins',
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 15),
+        Row(
+          children: [
+            Flexible(
+              child: _buildSceneButton(
+                context,
+                s.allOn,
+                Icons.power_settings_new,
+                Colors.green[600]!,
+                () => _toggleAllDevices(true),
+              ),
+            ),
+            const SizedBox(width: 15),
+            Flexible(
+              child: Expanded(
+                child: _buildSceneButton(
+                  context,
+                  s.allOff,
+                  Icons.power_off,
+                  Colors.red[400]!,
+                  () => _toggleAllDevices(false),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSceneButton(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+  ) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color.withOpacity(0.1),
+        foregroundColor: color,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: color.withOpacity(0.3), width: 1),
+        ),
+        elevation: 0,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 22),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -320,97 +436,9 @@ class _ControllingPageState extends State<ControllingPage> {
     }
   }
 
-  Widget _buildSceneControls() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Quick Scenes',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'Poppins',
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 15),
-        Row(
-          children: [
-            Expanded(
-              child: _buildSceneButton(
-                'All On',
-                Icons.power_settings_new,
-                Colors.green[600]!,
-                () => _toggleAllDevices(true),
-              ),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: _buildSceneButton(
-                'All Off',
-                Icons.power_off,
-                Colors.red[400]!,
-                () => _toggleAllDevices(false),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 15),
-        // _buildSceneButton(
-        //   'Night Mode',
-        //   Icons.nightlight_round,
-        //   const Color(0xFF0A5099),
-        //   _activateNightMode,
-        // ),
-      ],
-    );
-  }
-
-  Widget _buildSceneButton(
-      String label, IconData icon, Color color, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
-        foregroundColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: color.withOpacity(0.3), width: 1),
-        ),
-        elevation: 0,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 22),
-          const SizedBox(width: 10),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _toggleAllDevices(bool status) {
     for (var device in devices) {
-      _toggleDevice(device.deviceId!, status);
-    }
-  }
-
-  void _activateNightMode() {
-    for (var device in devices) {
-      if (device.name.toLowerCase().contains('light')) {
-        _toggleDevice(device.deviceId!, false);
-      } else if (device.type.toLowerCase().contains('ac')) {
-        _toggleDevice(device.deviceId!, true);
-      }
+      _toggleDevice(device.deviceId, status);
     }
   }
 }

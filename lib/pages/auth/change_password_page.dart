@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/services/account_service.dart';
 
 class ChangePasswordPage extends StatefulWidget {
@@ -21,18 +22,18 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F9),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Ubah Password',
-          style: TextStyle(
+        title: Text(
+          s.changePasswordTitle,
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
@@ -61,8 +62,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         children: [
                           const SizedBox(height: 10),
                           _buildPasswordField(
+                            context: context,
                             controller: _currentPasswordController,
-                            label: 'Password Saat Ini',
+                            label: s.currentPasswordLabel,
                             obscureText: _obscureCurrentPassword,
                             onToggleVisibility: () {
                               setState(() {
@@ -73,8 +75,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           ),
                           const SizedBox(height: 20),
                           _buildPasswordField(
+                            context: context,
                             controller: _newPasswordController,
-                            label: 'Password Baru',
+                            label: s.newPasswordLabel,
                             obscureText: _obscureNewPassword,
                             onToggleVisibility: () {
                               setState(() {
@@ -84,8 +87,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           ),
                           const SizedBox(height: 20),
                           _buildPasswordField(
+                            context: context,
                             controller: _confirmPasswordController,
-                            label: 'Konfirmasi Password Baru',
+                            label: s.confirmNewPasswordLabel,
                             obscureText: _obscureConfirmPassword,
                             onToggleVisibility: () {
                               setState(() {
@@ -120,9 +124,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              'SIMPAN PERUBAHAN',
-                              style: TextStyle(
+                          : Text(
+                              s.saveChanges,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.bold,
@@ -141,11 +145,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   Widget _buildPasswordField({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required bool obscureText,
     required VoidCallback onToggleVisibility,
   }) {
+    final s = AppLocalizations.of(context)!;
+
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
@@ -189,10 +196,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Harap masukkan $label';
+          return s.allFieldsRequired.replaceFirst('{field}', label);
         }
-        if (label.contains('Baru') && value.length < 8) {
-          return 'Password minimal 8 karakter';
+        if (label == s.newPasswordLabel && value.length < 8) {
+          return s.passwordMinLength;
         }
         return null;
       },
@@ -200,14 +207,16 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   Future<void> _submitForm() async {
+    final s = AppLocalizations.of(context)!;
+
     if (!_formKey.currentState!.validate()) return;
 
     if (_newPasswordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Password baru dan konfirmasi tidak sama',
-            style: TextStyle(fontFamily: 'Poppins'),
+            s.passwordMismatch,
+            style: const TextStyle(fontFamily: 'Poppins'),
           ),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,

@@ -1,6 +1,10 @@
+import 'dart:math';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:syncfusion_flutter_gauges/gauges.dart';
+import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/pages/device/add_device_page.dart';
@@ -32,14 +36,21 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   final Map<String, Map<String, List<double>>> chartData = {};
   final Map<String, Map<String, List<DateTime>>> timestamps = {};
+  final Map<String, List<Map<String, dynamic>>> energyHistory = {};
 
-  String selectedPeriod = 'Harian';
+  String selectedPeriod = 'Daily';
+  final List<String> periodOptions = ['Daily', 'Weekly', 'Monthly', 'Yearly'];
   final TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: true);
 
   @override
   void initState() {
     super.initState();
+    _initializeData();
+    _initializeMqttService();
+    _generateSampleHistoryData();
+  }
 
+  void _initializeData() {
     monitoringDevices =
         User().devices.where((device) => device.type == 'monitoring').toList();
 
@@ -65,86 +76,148 @@ class _MonitoringPageState extends State<MonitoringPage> {
         'Temperature': [],
         'Humidity': [],
       };
-    }
 
+      energyHistory[device.deviceId] = [];
+    }
+  }
+
+  void _initializeMqttService() {
     mqttService = MqttService(
       onMessageReceived: (data) {
-        print('data: $data');
-        print('MQTT Message received: ${data['id']} - ${data['measured_at']}');
-        print(
-            'compare data: ${data['id']} == ${monitoringDevices[currentDeviceIndex].deviceId}');
         if (monitoringDevices.isNotEmpty &&
             data['id'] == monitoringDevices[currentDeviceIndex].deviceId) {
           setState(() {
-            final String measuredAt = data['measured_at'] ?? '';
-
-            if (measuredAt.isNotEmpty) {
-              try {
-                final parts = measuredAt.split(' ');
-                if (parts.length == 2) {
-                  tanggal = parts[0];
-                  waktu = parts[1].length >= 5
-                      ? parts[1].substring(0, 5)
-                      : parts[1];
-                } else {
-                  tanggal = '-';
-                  waktu = '-';
-                }
-              } catch (e) {
-                tanggal = '-';
-                waktu = '-';
-                debugPrint('Error parsing measured_at: $e');
-              }
-            } else {
-              tanggal = '-';
-              waktu = '-';
-            }
-
-            voltage = _formatDouble(data['voltage']) ?? '-';
-            current = _formatDouble(data['current']) ?? '-';
-            power = _formatDouble(data['power']) ?? '-';
-            energy = _formatDouble(data['energy']) ?? '-';
-            frequency = _formatDouble(data['frequency']) ?? '-';
-            powerFactor = _formatDouble(data['power_factor']) ?? '-';
-            temperature = _formatDouble(data['temperature']) ?? '-';
-            humidity = _formatDouble(data['humidity']) ?? '-';
-
-            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
-                'Voltage', double.tryParse(voltage));
-            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
-                'Current', double.tryParse(current));
-            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
-                'Power', double.tryParse(power));
-            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
-                'Energy', double.tryParse(energy));
-            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
-                'Frequency', double.tryParse(frequency));
-            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
-                'Power Factor', double.tryParse(powerFactor));
-            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
-                'Temperature', double.tryParse(temperature));
-            _updateChartData(monitoringDevices[currentDeviceIndex].deviceId,
-                'Humidity', double.tryParse(humidity));
+            _updateDateTime(data['measured_at']);
+            _updateMetrics(data);
+            _updateChartData();
           });
         }
       },
     );
   }
 
-  void _updateChartData(String deviceId, String key, double? value) {
-    if (value == null) return;
-    final now = DateTime.now();
-
-    final data = chartData[deviceId]![key]!;
-    final timeData = timestamps[deviceId]![key]!;
-
-    if (data.length >= 20) {
-      data.removeAt(0);
-      timeData.removeAt(0);
+  void _updateDateTime(String? measuredAt) {
+    if (measuredAt == null || measuredAt.isEmpty) {
+      tanggal = '-';
+      waktu = '-';
+      return;
     }
 
-    data.add(value);
-    timeData.add(now);
+    try {
+      final parts = measuredAt.split(' ');
+      if (parts.length == 2) {
+        tanggal = parts[0];
+        waktu = parts[1].length >= 5 ? parts[1].substring(0, 5) : parts[1];
+      } else {
+        tanggal = '-';
+        waktu = '-';
+      }
+    } catch (e) {
+      tanggal = '-';
+      waktu = '-';
+    }
+  }
+
+  void _updateMetrics(Map<String, dynamic> data) {
+    voltage = _formatDouble(data['voltage']) ?? '-';
+    current = _formatDouble(data['current']) ?? '-';
+    power = _formatDouble(data['power']) ?? '-';
+    energy = _formatDouble(data['energy']) ?? '-';
+    frequency = _formatDouble(data['frequency']) ?? '-';
+    powerFactor = _formatDouble(data['power_factor']) ?? '-';
+    temperature = _formatDouble(data['temperature']) ?? '-';
+    humidity = _formatDouble(data['humidity']) ?? '-';
+  }
+
+  void _updateChartData() {
+    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+    final now = DateTime.now();
+
+    void updateData(String key, String valueStr) {
+      final value = double.tryParse(valueStr);
+      if (value == null) return;
+
+      final data = chartData[deviceId]![key]!;
+      final timeData = timestamps[deviceId]![key]!;
+
+      if (data.length >= 20) {
+        data.removeAt(0);
+        timeData.removeAt(0);
+      }
+
+      data.add(value);
+      timeData.add(now);
+    }
+
+    updateData('Voltage', voltage);
+    updateData('Current', current);
+    updateData('Power', power);
+    updateData('Energy', energy);
+    updateData('Frequency', frequency);
+    updateData('Power Factor', powerFactor);
+    updateData('Temperature', temperature);
+    updateData('Humidity', humidity);
+  }
+
+  void _generateSampleHistoryData() {
+    final now = DateTime.now();
+    final deviceId = monitoringDevices.isNotEmpty
+        ? monitoringDevices[currentDeviceIndex].deviceId
+        : '';
+
+    if (deviceId.isEmpty) return;
+
+    // Generate daily data for the past 7 days
+    final List<Map<String, dynamic>> dailyData = [];
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      dailyData.add({
+        'date': date,
+        'energy': 30.0 + Random().nextDouble() * 20,
+        'cost': (30.0 + Random().nextDouble() * 20) * 1444.70,
+      });
+    }
+
+    // Generate weekly data for the past 4 weeks
+    final List<Map<String, dynamic>> weeklyData = [];
+    for (int i = 3; i >= 0; i--) {
+      final startDate = now.subtract(Duration(days: 7 * (i + 1)));
+      final endDate = now.subtract(Duration(days: 7 * i));
+      weeklyData.add({
+        'date': endDate,
+        'energy': 210.0 + Random().nextDouble() * 140,
+        'cost': (210.0 + Random().nextDouble() * 140) * 1444.70,
+      });
+    }
+
+    // Generate monthly data for the past 6 months
+    final List<Map<String, dynamic>> monthlyData = [];
+    for (int i = 5; i >= 0; i--) {
+      final date = DateTime(now.year, now.month - i, 1);
+      monthlyData.add({
+        'date': date,
+        'energy': 900.0 + Random().nextDouble() * 600,
+        'cost': (900.0 + Random().nextDouble() * 600) * 1444.70,
+      });
+    }
+
+    // Generate yearly data for the past 3 years
+    final List<Map<String, dynamic>> yearlyData = [];
+    for (int i = 2; i >= 0; i--) {
+      final date = DateTime(now.year - i, 1, 1);
+      yearlyData.add({
+        'date': date,
+        'energy': 10800.0 + Random().nextDouble() * 7200,
+        'cost': (10800.0 + Random().nextDouble() * 7200) * 1444.70,
+      });
+    }
+
+    energyHistory[deviceId] = [
+      ...dailyData,
+      ...weeklyData,
+      ...monthlyData,
+      ...yearlyData,
+    ];
   }
 
   String? _formatDouble(dynamic value) {
@@ -156,6 +229,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   @override
   void dispose() {
+    mqttService.disconnect();
     super.dispose();
   }
 
@@ -163,24 +237,30 @@ class _MonitoringPageState extends State<MonitoringPage> {
     if (index >= 0 && index < monitoringDevices.length) {
       setState(() {
         currentDeviceIndex = index;
-        tanggal = '-';
-        waktu = '-';
-        voltage = '-';
-        current = '-';
-        power = '-';
-        energy = '-';
-        frequency = '-';
-        powerFactor = '-';
-        temperature = '-';
-        humidity = '-';
+        _resetMetrics();
       });
     }
   }
 
+  void _resetMetrics() {
+    tanggal = '-';
+    waktu = '-';
+    voltage = '-';
+    current = '-';
+    power = '-';
+    energy = '-';
+    frequency = '-';
+    powerFactor = '-';
+    temperature = '-';
+    humidity = '-';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
     final bool hasMonitoringDevice = monitoringDevices.isNotEmpty;
     final totalMonitoringDevices = monitoringDevices.length;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A5099),
       body: Stack(
@@ -194,7 +274,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                     children: [
                       Column(
                         children: [
-                          _buildHeader(),
+                          _buildHeader(s),
                           Container(
                             margin: const EdgeInsets.all(10),
                             padding: const EdgeInsets.all(20),
@@ -207,11 +287,11 @@ class _MonitoringPageState extends State<MonitoringPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      _buildDeviceSwitcher(),
+                                      _buildDeviceSwitcher(context),
                                       const SizedBox(height: 15),
-                                      const Text(
-                                        'Live Monitoring Data',
-                                        style: TextStyle(
+                                      Text(
+                                        s.monitorLiveTitle,
+                                        style: const TextStyle(
                                           fontSize: 18,
                                           fontFamily: 'Poppins',
                                           fontWeight: FontWeight.bold,
@@ -219,58 +299,20 @@ class _MonitoringPageState extends State<MonitoringPage> {
                                       ),
                                       const SizedBox(height: 15),
                                       _buildDateTimeCard(),
-                                      const SizedBox(height: 150),
-                                      _buildPeriodDropdown(),
+                                      const SizedBox(height: 15),
+                                      _buildLiveDataScroll(),
                                       const SizedBox(height: 20),
-                                      _buildVoltageCurrentChart(),
+                                      _buildPeriodDropdown(s),
                                       const SizedBox(height: 20),
-                                      _buildPowerEnergyChart(),
+                                      _buildEnergyUsageChart(),
                                       const SizedBox(height: 20),
-                                      _buildFrequencyPfRow(),
-                                      const SizedBox(height: 20),
-                                      _buildTempHumidityChart(),
+                                      _buildEnergyHistorySection(s),
                                     ],
                                   )
-                                : Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 40, horizontal: 20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange.shade50,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                          color: Colors.orange.shade200),
-                                    ),
-                                    child: const Center(
-                                      child: Text(
-                                        "Perangkat monitoring tidak tersedia, tolong daftarkan terlebih dahulu perangkat monitoring anda",
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontFamily: 'Poppins',
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.orange,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
+                                : _buildNoDeviceCard(s),
                           ),
                         ],
                       ),
-                      if (hasMonitoringDevice && totalMonitoringDevices < 2)
-                        Positioned(
-                          top: MediaQuery.of(context).size.height * 0.55 - 60,
-                          child: _buildLiveDataScroll(),
-                          right: 0,
-                          left: 0,
-                        )
-                      else if (hasMonitoringDevice)
-                        Positioned(
-                          top: MediaQuery.of(context).size.height * 0.65 - 60,
-                          child: _buildLiveDataScroll(),
-                          right: 0,
-                          left: 0,
-                        )
                     ],
                   ),
                 ),
@@ -283,20 +325,88 @@ class _MonitoringPageState extends State<MonitoringPage> {
     );
   }
 
-  Widget _buildDeviceSwitcher() {
-    if (monitoringDevices.length <= 1) {
-      return Container();
-    }
+  Widget _buildHeader(AppLocalizations s) {
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.all(30),
+        color: const Color(0xFF0A5099),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    s.monitorHeaderTitle,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2196F3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                    ),
+                    child: Text(
+                      s.monitorHistoryButton,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                fixedSize: const Size(50, 50),
+                shape: const CircleBorder(),
+                padding: const EdgeInsets.all(0),
+                backgroundColor: const Color(0xFF2196F3),
+                shadowColor: Colors.transparent,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AddDevicePage()),
+                );
+              },
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeviceSwitcher(BuildContext context) {
+    if (monitoringDevices.length <= 1) return Container();
 
     return Column(
       children: [
         Text(
           monitoringDevices[currentDeviceIndex].name,
           style: const TextStyle(
-              fontSize: 18,
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0A5099)),
+            fontSize: 18,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0A5099),
+          ),
         ),
         const SizedBox(height: 10),
         Row(
@@ -327,265 +437,30 @@ class _MonitoringPageState extends State<MonitoringPage> {
     );
   }
 
-  Widget _buildVoltageCurrentChart() {
-    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+  Widget _buildPeriodDropdown(AppLocalizations s) {
+    // Define both English and Indonesian options
+    final periodOptions = {
+      'Daily': 'Harian',
+      'Weekly': 'Mingguan', 
+      'Monthly': 'Bulanan',
+      'Yearly': 'Tahunan'
+    };
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Voltage & Current',
-          style: TextStyle(
-            fontSize: 16,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
+    // Convert selectedPeriod to English if it's in Indonesian
+    final currentValue = periodOptions.entries
+        .firstWhere(
+          (entry) => entry.value == selectedPeriod,
+          orElse: () => periodOptions.entries.firstWhere(
+            (entry) => entry.key == selectedPeriod,
           ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 250,
-          child: SfCartesianChart(
-            legend: Legend(isVisible: true, position: LegendPosition.top),
-            tooltipBehavior: _tooltipBehavior,
-            primaryXAxis: DateTimeAxis(
-              title: AxisTitle(text: 'Time'),
-              intervalType: DateTimeIntervalType.minutes,
-            ),
-            primaryYAxis: NumericAxis(
-              title: AxisTitle(text: 'Voltage (V)'),
-              minimum: 200,
-              maximum: 250,
-            ),
-            axes: [
-              NumericAxis(
-                name: 'currentAxis',
-                title: AxisTitle(text: 'Current (A)'),
-                opposedPosition: true,
-                minimum: 0,
-                maximum: 10,
-              )
-            ],
-            series: [
-              LineSeries<ChartData, DateTime>(
-                name: 'Voltage',
-                dataSource: _getChartData(deviceId, 'Voltage'),
-                xValueMapper: (data, _) => data.time,
-                yValueMapper: (data, _) => data.value,
-                color: const Color(0xFF0A5099),
-                markerSettings: const MarkerSettings(isVisible: true),
-              ),
-              LineSeries<ChartData, DateTime>(
-                name: 'Current',
-                dataSource: _getChartData(deviceId, 'Current'),
-                xValueMapper: (data, _) => data.time,
-                yValueMapper: (data, _) => data.value,
-                color: Colors.red,
-                yAxisName: 'currentAxis',
-                markerSettings: const MarkerSettings(isVisible: true),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+        )
+        .key;
 
-  Widget _buildPowerEnergyChart() {
-    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Power & Energy',
-          style: TextStyle(
-            fontSize: 16,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 250,
-          child: SfCartesianChart(
-            legend: Legend(isVisible: true, position: LegendPosition.top),
-            primaryXAxis: DateTimeAxis(title: AxisTitle(text: 'Time')),
-            primaryYAxis: NumericAxis(title: AxisTitle(text: 'Power (W)')),
-            series: [
-              LineSeries<ChartData, DateTime>(
-                name: 'Power',
-                dataSource: _getChartData(deviceId, 'Power'),
-                xValueMapper: (data, _) => data.time,
-                yValueMapper: (data, _) => data.value,
-                color: Colors.green,
-                markerSettings: const MarkerSettings(isVisible: true),
-              ),
-              ColumnSeries<ChartData, DateTime>(
-                name: 'Energy',
-                dataSource: _getChartData(deviceId, 'Energy'),
-                xValueMapper: (data, _) => data.time,
-                yValueMapper: (data, _) => data.value,
-                color: Colors.purple,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFrequencyPfRow() {
-    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
-    final currentFrequency =
-        chartData[deviceId]?['Frequency']?.isNotEmpty ?? false
-            ? chartData[deviceId]!['Frequency']!.last
-            : 0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Frequency & Power Factor',
-          style: TextStyle(
-            fontSize: 16,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 200,
-          child: Row(
-            children: [
-              Expanded(
-                child: SfRadialGauge(
-                  axes: [
-                    RadialAxis(
-                      minimum: 49,
-                      maximum: 51,
-                      ranges: [
-                        GaugeRange(
-                          startValue: 49,
-                          endValue: 50,
-                          color: Colors.orange,
-                        ),
-                        GaugeRange(
-                          startValue: 50,
-                          endValue: 51,
-                          color: Colors.green,
-                        ),
-                      ],
-                      pointers: [
-                        NeedlePointer(
-                          value: currentFrequency.toDouble(),
-                          enableAnimation: true,
-                        ),
-                      ],
-                      annotations: [
-                        GaugeAnnotation(
-                          widget: Text(
-                            'Frequency\n${currentFrequency.toStringAsFixed(1)} Hz',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                          positionFactor: 0.5,
-                          angle: 90,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SfCartesianChart(
-                  primaryXAxis: DateTimeAxis(title: AxisTitle(text: 'Time')),
-                  primaryYAxis: NumericAxis(
-                    title: AxisTitle(text: 'Power Factor'),
-                    minimum: 0,
-                    maximum: 1,
-                  ),
-                  series: [
-                    LineSeries<ChartData, DateTime>(
-                      name: 'Power Factor',
-                      dataSource: _getChartData(deviceId, 'Power Factor'),
-                      xValueMapper: (data, _) => data.time,
-                      yValueMapper: (data, _) => data.value,
-                      color: Colors.amber,
-                      markerSettings: const MarkerSettings(isVisible: true),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTempHumidityChart() {
-    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Temperature & Humidity',
-          style: TextStyle(
-            fontSize: 16,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 250,
-          child: SfCartesianChart(
-            legend: Legend(isVisible: true, position: LegendPosition.top),
-            primaryXAxis: DateTimeAxis(title: AxisTitle(text: 'Time')),
-            primaryYAxis: NumericAxis(title: AxisTitle(text: 'Value')),
-            series: [
-              LineSeries<ChartData, DateTime>(
-                name: 'Temperature (°C)',
-                dataSource: _getChartData(deviceId, 'Temperature'),
-                xValueMapper: (data, _) => data.time,
-                yValueMapper: (data, _) => data.value,
-                color: Colors.red,
-                markerSettings: const MarkerSettings(isVisible: true),
-              ),
-              LineSeries<ChartData, DateTime>(
-                name: 'Humidity (%)',
-                dataSource: _getChartData(deviceId, 'Humidity'),
-                xValueMapper: (data, _) => data.time,
-                yValueMapper: (data, _) => data.value,
-                color: Colors.blue,
-                markerSettings: const MarkerSettings(isVisible: true),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<ChartData> _getChartData(String deviceId, String key) {
-    final values = chartData[deviceId]?[key] ?? [];
-    final times = timestamps[deviceId]?[key] ?? [];
-    return List.generate(values.length, (index) {
-      return ChartData(times[index], values[index]);
-    });
-  }
-
-  Widget _buildPeriodDropdown() {
     return Row(
       children: [
-        const Text(
-          'Prediction Option: ',
-          style: TextStyle(
+        Text(
+          '${s.monitorPredictionDropdownLabel} ',
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             fontFamily: 'Poppins',
@@ -593,103 +468,29 @@ class _MonitoringPageState extends State<MonitoringPage> {
         ),
         const SizedBox(width: 10),
         DropdownButton<String>(
-          value: selectedPeriod,
-          items: ['Harian', 'Mingguan', 'Bulanan', 'Tahunan']
-              .map((value) => DropdownMenuItem(
-                    value: value,
-                    child: Text(
-                      value,
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ))
-              .toList(),
-          onChanged: (value) {
-            if (value != null) {
+          value: currentValue,
+          items: periodOptions.entries.map((entry) {
+            return DropdownMenuItem<String>(
+              value: entry.key,
+              child: Text(
+                entry.value, // Display Indonesian text
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
               setState(() {
-                selectedPeriod = value;
+                // Store the Indonesian version
+                selectedPeriod = periodOptions[newValue]!;
               });
             }
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildHeader() {
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.all(30),
-        color: const Color(0xFF0A5099),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Monitor your electricity\nconsumption!',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2196F3),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                    ),
-                    child: const Text(
-                      'View Data History',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                fixedSize: const Size(50, 50),
-                shape: const CircleBorder(),
-                padding: const EdgeInsets.all(0),
-                backgroundColor: Color(0xFF2196F3),
-                shadowColor: Colors.transparent,
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const AddDevicePage()),
-                ).then((success) {
-                  if (success == true) {
-                    print("DEBUG: Device added successfully");
-                  } else {
-                    print("DEBUG: Add device cancelled or failed");
-                  }
-                });
-              },
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -805,6 +606,316 @@ class _MonitoringPageState extends State<MonitoringPage> {
             );
           }).toList(),
           const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnergyUsageChart() {
+    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+    final filteredData = _getFilteredHistoryData(deviceId);
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Energy Usage ($selectedPeriod)',
+              style: const TextStyle(
+                fontSize: 16,
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0A5099),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 250,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(show: true),
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final date = filteredData[value.toInt()]['date'];
+                          String label;
+                          switch (selectedPeriod) {
+                            case 'Daily':
+                              label = DateFormat('EEE').format(date);
+                              break;
+                            case 'Weekly':
+                              label = 'Week ${value.toInt() + 1}';
+                              break;
+                            case 'Monthly':
+                              label = DateFormat('MMM').format(date);
+                              break;
+                            case 'Yearly':
+                              label = DateFormat('yyyy').format(date);
+                              break;
+                            default:
+                              label = '';
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              label,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            value.toInt().toString(),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontFamily: 'Poppins',
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  minX: 0,
+                  maxX: filteredData.length.toDouble() - 1,
+                  minY: 0,
+                  maxY: _getMaxEnergyValue(filteredData) * 1.2,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: filteredData.asMap().entries.map((e) {
+                        return FlSpot(
+                          e.key.toDouble(),
+                          e.value['energy'].toDouble(),
+                        );
+                      }).toList(),
+                      isCurved: true,
+                      color: const Color(0xFF0A5099),
+                      barWidth: 3,
+                      belowBarData: BarAreaData(show: false),
+                      dotData: FlDotData(show: true),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEnergyHistorySection(AppLocalizations s) {
+    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+    final filteredData = _getFilteredHistoryData(deviceId);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Energy History ($selectedPeriod)',
+          style: const TextStyle(
+            fontSize: 16,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0A5099),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Text(
+                      'Date',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Energy (kWh)',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Cost (IDR)',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ...filteredData.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _formatDate(entry['date']),
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                        Text(
+                          entry['energy'].toStringAsFixed(2),
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                        Text(
+                          NumberFormat("#,###").format(entry['cost'].toInt()),
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Map<String, dynamic>> _getFilteredHistoryData(String deviceId) {
+    final now = DateTime.now();
+    final history = energyHistory[deviceId] ?? [];
+
+    switch (selectedPeriod) {
+      case 'Daily':
+        return history
+            .where((entry) =>
+                entry['date'].isAfter(now.subtract(const Duration(days: 7))))
+            .toList();
+      case 'Weekly':
+        return history
+            .where((entry) =>
+                entry['date'].isAfter(now.subtract(const Duration(days: 28))))
+            .toList()
+            .sublist(0, 4);
+      case 'Monthly':
+        return history
+            .where((entry) =>
+                entry['date'].isAfter(now.subtract(const Duration(days: 180))))
+            .toList()
+            .sublist(0, 6);
+      case 'Yearly':
+        return history
+            .where((entry) =>
+                entry['date'].isAfter(now.subtract(const Duration(days: 1095))))
+            .toList()
+            .sublist(0, 3);
+      default:
+        return [];
+    }
+  }
+
+  double _getMaxEnergyValue(List<Map<String, dynamic>> data) {
+    if (data.isEmpty) return 100;
+    return data
+        .map((e) => e['energy'].toDouble())
+        .reduce((a, b) => a > b ? a : b);
+  }
+
+  String _formatDate(DateTime date) {
+    switch (selectedPeriod) {
+      case 'Daily':
+        return DateFormat('EEE, MMM d').format(date);
+      case 'Weekly':
+        return 'Week of ${DateFormat('MMM d').format(date)}';
+      case 'Monthly':
+        return DateFormat('MMMM yyyy').format(date);
+      case 'Yearly':
+        return DateFormat('yyyy').format(date);
+      default:
+        return DateFormat('MMM d, yyyy').format(date);
+    }
+  }
+
+  Widget _buildNoDeviceCard(AppLocalizations s) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey[300]!,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.blueGrey,
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            s.monitorDeviceUnavailableTitle,
+            style: const TextStyle(
+              fontSize: 18,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            s.monitorDeviceUnavailableDesc,
+            style: const TextStyle(
+              fontSize: 14,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w400,
+              color: Colors.black54,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );

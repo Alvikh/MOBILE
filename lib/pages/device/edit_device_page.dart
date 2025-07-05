@@ -95,7 +95,7 @@ class _EditDevicePageState extends ConsumerState<EditDevicePage> {
       final deviceService = ref.read(deviceServiceProvider);
 
       await deviceService.updateDevice(
-        id: widget.device.deviceId!, // Changed from deviceId to id
+        id: widget.device.deviceId,
         name: _nameController.text,
         deviceId: _deviceIdController.text,
         type: _typeController.text,

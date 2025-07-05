@@ -300,6 +300,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
     setState(() => _isLoading = true);
     try {
       await deviceService.deleteDevice(device.id!);
+      // ignore: unused_result
       ref.refresh(deviceListProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

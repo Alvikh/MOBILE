@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/pages/account/settings_page.dart';
 import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
@@ -8,6 +9,8 @@ class AccountPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F9),
       body: Stack(
@@ -80,7 +83,7 @@ class AccountPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 15),
                         Text(
-                          User().name ?? 'No Name',
+                          User().name ?? s.nameLabel,
                           style: const TextStyle(
                             fontSize: 22,
                             fontFamily: 'Poppins',
@@ -90,7 +93,7 @@ class AccountPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          User().email ?? 'No Email',
+                          User().email ?? s.email,
                           style: TextStyle(
                             fontSize: 16,
                             fontFamily: 'Poppins',
@@ -108,29 +111,25 @@ class AccountPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle('Informasi Akun'),
-                      _buildDetailItem(
-                          'ID Pengguna', User().id?.toString() ?? '-'),
-                      _buildDetailItem('Peran', User().role ?? '-'),
-                      _buildDetailItem('Status', User().status ?? '-'),
-                      _buildDetailItem(
-                          'Nomor Telepon', User().phone?.toString() ?? '-'),
-                      _buildDetailItem(
-                          'Alamat', User().address?.toString() ?? '-'),
+                      _buildSectionTitle(s.accountInformation),
+                      _buildDetailItem(s.userId, User().id?.toString() ?? '-'),
+                      _buildDetailItem(s.role, User().role ?? '-'),
+                      _buildDetailItem(s.status, User().status ?? '-'),
+                      _buildDetailItem(s.phone, User().phone?.toString() ?? '-'),
+                      _buildDetailItem(s.address, User().address?.toString() ?? '-'),
                       const SizedBox(height: 20),
-                      _buildSectionTitle('Informasi Sistem'),
-                      _buildDetailItem('Email Terverifikasi',
-                          User().emailVerifiedAt != null ? 'Ya' : 'Tidak'),
-                      _buildDetailItem('Login Terakhir',
-                          User().lastLoginAt?.toString() ?? '-'),
-                      _buildDetailItem('Dibuat Pada',
-                          User().createdAt?.toLocal().toString() ?? '-'),
-                      _buildDetailItem('Diperbarui Pada',
-                          User().updatedAt?.toLocal().toString() ?? '-'),
+                      _buildSectionTitle(s.systemInformation),
+                      _buildDetailItem(
+                        s.verifiedEmail,
+                        User().emailVerifiedAt != null ? s.already : s.notYet,
+                      ),
+                      _buildDetailItem(s.lastLogin, User().lastLoginAt?.toString() ?? '-'),
+                      _buildDetailItem(s.madeIn, User().createdAt?.toLocal().toString() ?? '-'),
+                      _buildDetailItem(s.updatedOn, User().updatedAt?.toLocal().toString() ?? '-'),
                       const SizedBox(height: 30),
-                      _buildSettingsButton(context),
+                      _buildSettingsButton(context, s),
                       const SizedBox(height: 15),
-                      _buildLogoutButton(context),
+                      _buildLogoutButton(context, s),
                       const SizedBox(height: 80),
                     ],
                   ),
@@ -208,14 +207,14 @@ class AccountPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsButton(BuildContext context) {
+  Widget _buildSettingsButton(BuildContext context, AppLocalizations s) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         icon: const Icon(Icons.settings, size: 20),
-        label: const Text(
-          'Pengaturan Akun',
-          style: TextStyle(
+        label: Text(
+          s.accountSettings,
+          style: const TextStyle(
             fontSize: 16,
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
@@ -240,14 +239,14 @@ class AccountPage extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
+  Widget _buildLogoutButton(BuildContext context, AppLocalizations s) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         icon: const Icon(Icons.logout, size: 20),
-        label: const Text(
-          'Keluar Akun',
-          style: TextStyle(
+        label: Text(
+          s.logout,
+          style: const TextStyle(
             fontSize: 16,
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
@@ -262,32 +261,32 @@ class AccountPage extends StatelessWidget {
           ),
           elevation: 2,
         ),
-        onPressed: () => _showLogoutDialog(context),
+        onPressed: () => _showLogoutDialog(context, s),
       ),
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, AppLocalizations s) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
-            'Konfirmasi Keluar',
-            style: TextStyle(fontFamily: 'Poppins'),
+          title: Text(
+            s.logoutConfirmationTitle,
+            style: const TextStyle(fontFamily: 'Poppins'),
           ),
-          content: const Text(
-            'Apakah Anda yakin ingin keluar dari akun ini?',
-            style: TextStyle(fontFamily: 'Poppins'),
+          content: Text(
+            s.logoutConfirmationMessage,
+            style: const TextStyle(fontFamily: 'Poppins'),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
           actions: [
             TextButton(
-              child: const Text(
-                'Batal',
-                style: TextStyle(fontFamily: 'Poppins'),
+              child: Text(
+                s.cancel,
+                style: const TextStyle(fontFamily: 'Poppins'),
               ),
               onPressed: () => Navigator.of(context).pop(),
               style: TextButton.styleFrom(
@@ -295,9 +294,9 @@ class AccountPage extends StatelessWidget {
               ),
             ),
             TextButton(
-              child: const Text(
-                'Keluar',
-                style: TextStyle(
+              child: Text(
+                s.confirmLogout,
+                style: const TextStyle(
                   color: Colors.red,
                   fontFamily: 'Poppins',
                 ),

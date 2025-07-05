@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/services/device_service.dart';
 import 'package:ta_mobile/services/provider/user_notifier.dart'
     show userProvider;
@@ -77,13 +78,15 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
   }
 
   Future<void> _submitForm() async {
+    final s = AppLocalizations.of(context)!;
+    
     if (!_formKey.currentState!.validate()) return;
     if (_installationDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Please select installation date',
-            style: TextStyle(fontFamily: 'Poppins'),
+            s.pleaseSelectInstallationDate,
+            style: const TextStyle(fontFamily: 'Poppins'),
           ),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
@@ -99,7 +102,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
 
     try {
       final deviceService = ref.read(deviceServiceProvider);
-      final user = ref.read(userProvider);
+      ref.read(userProvider);
 
       await deviceService.createDevice(
         name: _nameController.text,
@@ -114,8 +117,8 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Device added successfully',
-              style: TextStyle(fontFamily: 'Poppins'),
+              s.deviceAddedSuccess,
+              style: const TextStyle(fontFamily: 'Poppins'),
             ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
@@ -131,7 +134,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Error: ${e.toString()}',
+              s.error.replaceFirst('{error}', e.toString()),
               style: const TextStyle(fontFamily: 'Poppins'),
             ),
             backgroundColor: Colors.redAccent,
@@ -149,6 +152,8 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F9),
       appBar: AppBar(
@@ -156,9 +161,9 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Add New Device',
-          style: TextStyle(
+        title: Text(
+          s.addDeviceTitle,
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
@@ -193,17 +198,19 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                       child: Column(
                         children: [
                           CustomTextField(
-                            label: 'Device Name',
+                            label: s.deviceNameLabel,
                             controller: _nameController,
                             prefixIcon: Icons.devices_other,
                             iconColor: const Color(0xFF0A5099),
+                            
                           ),
                           const SizedBox(height: 20),
                           CustomTextField(
-                            label: 'Device ID',
+                            label: s.deviceIdLabel,
                             controller: _deviceIdController,
                             prefixIcon: Icons.confirmation_number,
                             iconColor: const Color(0xFF0A5099),
+                            
                           ),
                           const SizedBox(height: 20),
                           DropdownButtonFormField<String>(
@@ -223,7 +230,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                               if (value != null) _typeController.text = value;
                             }),
                             decoration: InputDecoration(
-                              labelText: 'Device Type',
+                              labelText: s.deviceTypeLabel,
                               labelStyle: const TextStyle(
                                 fontFamily: 'Poppins',
                                 color: Colors.grey,
@@ -234,13 +241,11 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide:
-                                    const BorderSide(color: Colors.grey),
+                                borderSide: const BorderSide(color: Colors.grey),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide:
-                                    const BorderSide(color: Colors.grey),
+                                borderSide: const BorderSide(color: Colors.grey),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -257,24 +262,25 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                             style: const TextStyle(fontFamily: 'Poppins'),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please select device type';
+                                return s.pleaseSelectDeviceType;
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 20),
                           CustomTextField(
-                            label: 'Building',
+                            label: s.deviceBuildingLabel,
                             controller: _buildingController,
                             prefixIcon: Icons.location_city,
                             iconColor: const Color(0xFF0A5099),
+                            
                           ),
                           const SizedBox(height: 20),
                           InkWell(
                             onTap: () => _selectDate(context),
                             child: InputDecorator(
                               decoration: InputDecoration(
-                                labelText: 'Installation Date',
+                                labelText: s.installationDateLabel,
                                 labelStyle: const TextStyle(
                                   fontFamily: 'Poppins',
                                   color: Colors.grey,
@@ -285,13 +291,11 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide:
-                                      const BorderSide(color: Colors.grey),
+                                  borderSide: const BorderSide(color: Colors.grey),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide:
-                                      const BorderSide(color: Colors.grey),
+                                  borderSide: const BorderSide(color: Colors.grey),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
@@ -309,11 +313,10 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                                 children: [
                                   Text(
                                     _installationDate == null
-                                        ? 'Select date'
+                                        ? s.selectDateText
                                         : DateFormat('yyyy-MM-dd')
                                             .format(_installationDate!),
-                                    style:
-                                        const TextStyle(fontFamily: 'Poppins'),
+                                    style: const TextStyle(fontFamily: 'Poppins'),
                                   ),
                                 ],
                               ),
@@ -344,9 +347,9 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              'SAVE DEVICE',
-                              style: TextStyle(
+                          : Text(
+                              s.saveDeviceButton,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.bold,

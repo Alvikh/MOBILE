@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/services/account_service.dart';
 
@@ -18,6 +22,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   bool _isLoading = false;
   User? _user;
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -54,10 +60,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => _isLoading = false);
   }
 
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+    }
+  }
+
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+
+    if (_profileImage != null) {
+      await AccountService.uploadProfilePhoto(_profileImage!);
+    }
 
     final result = await AccountService.updateProfile(
       name: _nameController.text.trim(),
@@ -98,18 +117,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F9),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Edit Profil',
-          style: TextStyle(
+        title: Text(
+          s.editProfile,
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
@@ -121,9 +140,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF0A5099),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF0A5099)),
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -131,6 +148,42 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 key: _formKey,
                 child: Column(
                   children: [
+                    Center(
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 55,
+                            backgroundColor: Colors.grey.shade300,
+                            backgroundImage: _profileImage != null
+                                ? FileImage(_profileImage!)
+                                : (_user?.profilePhotoPath != null
+                                    ? NetworkImage(_user!.profilePhotoPath!)
+                                    : const AssetImage('assets/images/default_avatar.png')
+                                        as ImageProvider),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: InkWell(
+                              onTap: _pickImage,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF0A5099),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
                     Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
@@ -141,28 +194,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         child: Column(
                           children: [
                             _buildTextField(
+                              context: context,
                               controller: _nameController,
-                              label: 'Nama Lengkap',
+                              label: s.username,
                               icon: Icons.person_outline,
                             ),
                             const SizedBox(height: 20),
                             _buildTextField(
+                              context: context,
                               controller: _emailController,
-                              label: 'Email',
+                              label: s.email,
                               icon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
                             ),
                             const SizedBox(height: 20),
                             _buildTextField(
+                              context: context,
                               controller: _phoneController,
-                              label: 'Nomor Telepon',
+                              label: s.phoneNumber,
                               icon: Icons.phone_outlined,
                               keyboardType: TextInputType.phone,
                             ),
                             const SizedBox(height: 20),
                             _buildTextField(
+                              context: context,
                               controller: _addressController,
-                              label: 'Alamat',
+                              label: s.address,
                               icon: Icons.home_outlined,
                               maxLines: 2,
                             ),
@@ -183,9 +240,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           ),
                           elevation: 2,
                         ),
-                        child: const Text(
-                          'SIMPAN PERUBAHAN',
-                          style: TextStyle(
+                        child: Text(
+                          s.saveChanges,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.bold,
@@ -202,12 +259,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildTextField({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
   }) {
+    final s = AppLocalizations.of(context)!;
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -245,10 +305,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'Harap masukkan $label';
+          return s.allFieldsRequired.replaceFirst('{field}', label);
         }
-        if (label == 'Email' && !value.contains('@')) {
-          return 'Email tidak valid';
+        if (label == s.email && !value.contains('@')) {
+          return s.invalidEmail;
         }
         return null;
       },
