@@ -9,7 +9,7 @@ class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF1F4F9),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -23,8 +23,8 @@ class AccountPage extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.blue.shade700,
-                        Colors.blue.shade400,
+                        const Color(0xFF0A5099),
+                        const Color(0xFF2196F3),
                       ],
                     ),
                     borderRadius: const BorderRadius.only(
@@ -33,7 +33,7 @@ class AccountPage extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue.withOpacity(0.3),
+                        color: const Color(0xFF0A5099).withOpacity(0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -73,7 +73,7 @@ class AccountPage extends StatelessWidget {
                               child: const Icon(
                                 Icons.edit,
                                 size: 18,
-                                color: Colors.blue,
+                                color: Color(0xFF0A5099),
                               ),
                             ),
                           ],
@@ -83,6 +83,7 @@ class AccountPage extends StatelessWidget {
                           User().name ?? 'No Name',
                           style: const TextStyle(
                             fontSize: 22,
+                            fontFamily: 'Poppins',
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -92,6 +93,7 @@ class AccountPage extends StatelessWidget {
                           User().email ?? 'No Email',
                           style: TextStyle(
                             fontSize: 16,
+                            fontFamily: 'Poppins',
                             color: Colors.white.withOpacity(0.9),
                           ),
                         ),
@@ -127,9 +129,9 @@ class AccountPage extends StatelessWidget {
                           User().updatedAt?.toLocal().toString() ?? '-'),
                       const SizedBox(height: 30),
                       _buildSettingsButton(context),
-                      SizedBox(
-                        height: 200,
-                      ),
+                      const SizedBox(height: 15),
+                      _buildLogoutButton(context),
+                      const SizedBox(height: 80),
                     ],
                   ),
                 ),
@@ -149,8 +151,9 @@ class AccountPage extends StatelessWidget {
         title,
         style: const TextStyle(
           fontSize: 18,
+          fontFamily: 'Poppins',
           fontWeight: FontWeight.bold,
-          color: Colors.blue,
+          color: Color(0xFF0A5099),
         ),
       ),
     );
@@ -159,10 +162,10 @@ class AccountPage extends StatelessWidget {
   Widget _buildDetailItem(String title, String value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
@@ -179,16 +182,22 @@ class AccountPage extends StatelessWidget {
             child: Text(
               title,
               style: const TextStyle(
+                fontFamily: 'Poppins',
                 fontWeight: FontWeight.w500,
                 color: Colors.grey,
               ),
             ),
           ),
-          const Text(': ', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(': ',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+              )),
           Expanded(
             child: Text(
               value,
               style: TextStyle(
+                fontFamily: 'Poppins',
                 color: Colors.grey[800],
                 fontWeight: FontWeight.w500,
               ),
@@ -206,11 +215,15 @@ class AccountPage extends StatelessWidget {
         icon: const Icon(Icons.settings, size: 20),
         label: const Text(
           'Pengaturan Akun',
-          style: TextStyle(fontSize: 16),
+          style: TextStyle(
+            fontSize: 16,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+          ),
         ),
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
-          backgroundColor: Colors.blue,
+          backgroundColor: const Color(0xFF0A5099),
           padding: const EdgeInsets.symmetric(vertical: 15),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -227,19 +240,55 @@ class AccountPage extends StatelessWidget {
     );
   }
 
+  Widget _buildLogoutButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.logout, size: 20),
+        label: const Text(
+          'Keluar Akun',
+          style: TextStyle(
+            fontSize: 16,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.red,
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        onPressed: () => _showLogoutDialog(context),
+      ),
+    );
+  }
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Konfirmasi Keluar'),
-          content: const Text('Apakah Anda yakin ingin keluar dari akun ini?'),
+          title: const Text(
+            'Konfirmasi Keluar',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+          content: const Text(
+            'Apakah Anda yakin ingin keluar dari akun ini?',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
           actions: [
             TextButton(
-              child: const Text('Batal'),
+              child: const Text(
+                'Batal',
+                style: TextStyle(fontFamily: 'Poppins'),
+              ),
               onPressed: () => Navigator.of(context).pop(),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.grey,
@@ -248,7 +297,10 @@ class AccountPage extends StatelessWidget {
             TextButton(
               child: const Text(
                 'Keluar',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontFamily: 'Poppins',
+                ),
               ),
               onPressed: () {
                 // Handle logout logic

@@ -19,6 +19,9 @@ class _ControllingPageState extends State<ControllingPage> {
   void initState() {
     super.initState();
     mqttService = MqttService();
+    if (!mqttService.isConnected) {
+      mqttService.connect();
+    }
     devices = User()
         .devices
         .where((device) => device.type.toLowerCase() == 'control')
@@ -29,6 +32,7 @@ class _ControllingPageState extends State<ControllingPage> {
   @override
   void dispose() {
     // mqttService.disconnect();
+
     super.dispose();
   }
 
@@ -48,7 +52,7 @@ class _ControllingPageState extends State<ControllingPage> {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: SafeArea(
+      body: Container(
         child: Stack(
           children: [
             Column(
@@ -138,6 +142,9 @@ class _ControllingPageState extends State<ControllingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(
+            height: 50,
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -349,12 +356,12 @@ class _ControllingPageState extends State<ControllingPage> {
           ],
         ),
         const SizedBox(height: 15),
-        _buildSceneButton(
-          'Night Mode',
-          Icons.nightlight_round,
-          const Color(0xFF0A5099),
-          _activateNightMode,
-        ),
+        // _buildSceneButton(
+        //   'Night Mode',
+        //   Icons.nightlight_round,
+        //   const Color(0xFF0A5099),
+        //   _activateNightMode,
+        // ),
       ],
     );
   }

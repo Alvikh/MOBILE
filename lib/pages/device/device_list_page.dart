@@ -20,23 +20,52 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
     final devicesAsync = ref.watch(deviceListProvider);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F9),
       appBar: AppBar(
-        title: const Text('Daftar Perangkat'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: const Text(
+          'Daftar Perangkat',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: const Color(0xFF0A5099),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () => ref.refresh(deviceListProvider),
           ),
         ],
       ),
       body: devicesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+        loading: () => const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF0A5099),
+          ),
+        ),
+        error: (error, stack) => Center(
+          child: Text(
+            'Error: $error',
+            style: const TextStyle(fontFamily: 'Poppins'),
+          ),
+        ),
         data: (devices) {
           if (devices.isEmpty) {
-            return const Center(child: Text('Tidak ada perangkat'));
+            return Center(
+              child: Text(
+                'Tidak ada perangkat',
+                style: const TextStyle(fontFamily: 'Poppins'),
+              ),
+            );
           }
           return _buildDeviceList(devices, deviceService);
         },
@@ -55,7 +84,12 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
             return _buildDeviceCard(device, context, deviceService);
           },
         ),
-        if (_isLoading) const Center(child: CircularProgressIndicator()),
+        if (_isLoading)
+          const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFF0A5099),
+            ),
+          ),
       ],
     );
   }
@@ -83,6 +117,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
                     ),
                   ),
                 ),
@@ -101,6 +136,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                       color: _getStatusColor(device.status),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
                     ),
                   ),
                 ),
@@ -122,13 +158,17 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Edit'),
+                    label: const Text(
+                      'Edit',
+                      style: TextStyle(fontFamily: 'Poppins'),
+                    ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                      side: const BorderSide(color: Colors.blue),
+                      foregroundColor: const Color(0xFF0A5099),
+                      side: const BorderSide(color: Color(0xFF0A5099)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     onPressed: () => _navigateToEditPage(device, context),
                   ),
@@ -137,13 +177,17 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.delete, size: 18),
-                    label: const Text('Hapus'),
+                    label: const Text(
+                      'Hapus',
+                      style: TextStyle(fontFamily: 'Poppins'),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                       side: const BorderSide(color: Colors.red),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     onPressed: () =>
                         _showDeleteDialog(device, context, deviceService),
@@ -164,7 +208,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
       case 'inactive':
         return Colors.orange;
       case 'maintenance':
-        return Colors.blue;
+        return const Color(0xFF0A5099);
       default:
         return Colors.grey;
     }
@@ -181,6 +225,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
               label,
               style: const TextStyle(
                 color: Colors.grey,
+                fontFamily: 'Poppins',
               ),
             ),
           ),
@@ -189,6 +234,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
             value,
             style: const TextStyle(
               fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
             ),
           ),
         ],
@@ -211,21 +257,32 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Hapus Perangkat'),
+          title: const Text(
+            'Hapus Perangkat',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
           content: Text(
-              'Apakah Anda yakin ingin menghapus perangkat ${device.name}?'),
+            'Apakah Anda yakin ingin menghapus perangkat ${device.name}?',
+            style: const TextStyle(fontFamily: 'Poppins'),
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
           actions: [
             TextButton(
-              child: const Text('Batal'),
+              child: const Text(
+                'Batal',
+                style: TextStyle(fontFamily: 'Poppins'),
+              ),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: const Text(
                 'Hapus',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontFamily: 'Poppins',
+                ),
               ),
               onPressed: () async {
                 Navigator.of(context).pop();
@@ -247,8 +304,15 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Perangkat ${device.name} berhasil dihapus'),
+            content: Text(
+              'Perangkat ${device.name} berhasil dihapus',
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
@@ -256,8 +320,15 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal menghapus perangkat: ${e.toString()}'),
+            content: Text(
+              'Gagal menghapus perangkat: ${e.toString()}',
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }

@@ -22,10 +22,25 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F9),
       appBar: AppBar(
-        title: const Text('Ubah Password'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: const Text(
+          'Ubah Password',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: const Color(0xFF0A5099),
       ),
       body: Stack(
         children: [
@@ -35,38 +50,53 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
-                  _buildPasswordField(
-                    controller: _currentPasswordController,
-                    label: 'Password Saat Ini',
-                    obscureText: _obscureCurrentPassword,
-                    onToggleVisibility: () {
-                      setState(() {
-                        _obscureCurrentPassword = !_obscureCurrentPassword;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  _buildPasswordField(
-                    controller: _newPasswordController,
-                    label: 'Password Baru',
-                    obscureText: _obscureNewPassword,
-                    onToggleVisibility: () {
-                      setState(() {
-                        _obscureNewPassword = !_obscureNewPassword;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  _buildPasswordField(
-                    controller: _confirmPasswordController,
-                    label: 'Konfirmasi Password Baru',
-                    obscureText: _obscureConfirmPassword,
-                    onToggleVisibility: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
-                    },
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 10),
+                          _buildPasswordField(
+                            controller: _currentPasswordController,
+                            label: 'Password Saat Ini',
+                            obscureText: _obscureCurrentPassword,
+                            onToggleVisibility: () {
+                              setState(() {
+                                _obscureCurrentPassword =
+                                    !_obscureCurrentPassword;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          _buildPasswordField(
+                            controller: _newPasswordController,
+                            label: 'Password Baru',
+                            obscureText: _obscureNewPassword,
+                            onToggleVisibility: () {
+                              setState(() {
+                                _obscureNewPassword = !_obscureNewPassword;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          _buildPasswordField(
+                            controller: _confirmPasswordController,
+                            label: 'Konfirmasi Password Baru',
+                            obscureText: _obscureConfirmPassword,
+                            onToggleVisibility: () {
+                              setState(() {
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 30),
                   SizedBox(
@@ -75,17 +105,29 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _submitForm,
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0A5099),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
+                        elevation: 2,
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : const Text(
                               'SIMPAN PERUBAHAN',
-                              style: TextStyle(fontSize: 16),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                     ),
                   ),
@@ -107,15 +149,42 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
+      style: const TextStyle(fontFamily: 'Poppins'),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: const Icon(Icons.lock_outline),
-        border: const OutlineInputBorder(),
+        labelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          color: Colors.grey,
+        ),
+        prefixIcon: Icon(
+          Icons.lock_outline,
+          color: const Color(0xFF0A5099),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.grey),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.grey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: Color(0xFF0A5099),
+            width: 2,
+          ),
+        ),
         suffixIcon: IconButton(
           icon: Icon(
             obscureText ? Icons.visibility_off : Icons.visibility,
+            color: Colors.grey,
           ),
           onPressed: onToggleVisibility,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 15,
+          horizontal: 15,
         ),
       ),
       validator: (value) {
@@ -135,9 +204,16 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     if (_newPasswordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password baru dan konfirmasi tidak sama'),
+        SnackBar(
+          content: Text(
+            'Password baru dan konfirmasi tidak sama',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       return;
@@ -155,13 +231,20 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result['message']),
+        content: Text(
+          result['message'],
+          style: const TextStyle(fontFamily: 'Poppins'),
+        ),
         backgroundColor: result['success'] ? Colors.green : Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
 
     if (result['success']) {
-      Navigator.of(context).pop(); // kembali ke halaman sebelumnya
+      Navigator.of(context).pop();
     }
   }
 

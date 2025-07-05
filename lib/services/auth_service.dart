@@ -1,3 +1,5 @@
+import 'dart:developer' show log;
+
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/services/api_service.dart';
 import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
@@ -51,29 +53,51 @@ class AuthService {
         useToken: false,
       );
 
+      // Debug print to see the actual response structure
+      log("Full response: $response");
+
       if (response['success'] == true) {
-        print(
-            "successs 1 debug user : ${response['user']}, token: ${response['token']} , refresh_token: ${response['refresh_token']}, success: ${response['success']} ");
+        // Add null checks for nested data
+        final responseData = response['data'] ?? {};
+        final token = responseData['token'];
+        final refreshToken = responseData['refresh_token'];
+        final userData = responseData['user'];
+
+        if (token == null || refreshToken == null || userData == null) {
+          return {
+            "success": false,
+            "message": "Invalid response data structure"
+          };
+        }
+
         await _saveAuthData(
-          token: response['data']['token'],
-          refreshToken: response['data']['refresh_token'],
-          userData: response['data']['user'],
+          token: token,
+          refreshToken: refreshToken,
+          userData: userData,
         );
-        print("successs 2 debug");
+
         return {
           "success": true,
           "message": "Login successful",
-          "user": User.fromMap(response['data']['user']),
+          "user": User.fromMap(userData),
         };
       } else {
+        // Handle error response with null checks
+        log("Login failed with response: $response");
+        log(ApiEndpoints.baseUrl + '/login');
+        final errorMessage =
+            (response['data'] ?? {})['message'] ?? "Login failed";
         return {
           "success": false,
-          "message": response['data']['message'] ?? "Login failed",
+          "message": errorMessage,
         };
       }
     } catch (e) {
-      print("error debug: $e");
-      return {"success": false, "message": "coooook: $e"};
+      log("Error during sign in: $e");
+      return {
+        "success": false,
+        "message": "An error occurred during login. Please try again."
+      };
     }
   }
 

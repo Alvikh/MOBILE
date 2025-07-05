@@ -38,8 +38,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result['message']),
+          content: Text(
+            result['message'],
+            style: const TextStyle(fontFamily: 'Poppins'),
+          ),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -63,13 +70,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result['message']),
+        content: Text(
+          result['message'],
+          style: const TextStyle(fontFamily: 'Poppins'),
+        ),
         backgroundColor: result['success'] ? Colors.green : Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
 
     if (result['success']) {
-      Navigator.of(context).pop(); // kembali ke halaman sebelumnya
+      Navigator.of(context).pop();
     }
   }
 
@@ -85,43 +99,76 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F9),
       appBar: AppBar(
-        title: const Text('Edit Profil'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: const Text(
+          'Edit Profil',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
+        elevation: 0,
+        backgroundColor: const Color(0xFF0A5099),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF0A5099),
+              ),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    _buildTextField(
-                      controller: _nameController,
-                      label: 'Nama Lengkap',
-                      icon: Icons.person,
-                    ),
-                    const SizedBox(height: 15),
-                    _buildTextField(
-                      controller: _emailController,
-                      label: 'Email',
-                      icon: Icons.email,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 15),
-                    _buildTextField(
-                      controller: _phoneController,
-                      label: 'Nomor Telepon',
-                      icon: Icons.phone,
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 15),
-                    _buildTextField(
-                      controller: _addressController,
-                      label: 'Alamat',
-                      icon: Icons.home,
-                      maxLines: 2,
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            _buildTextField(
+                              controller: _nameController,
+                              label: 'Nama Lengkap',
+                              icon: Icons.person_outline,
+                            ),
+                            const SizedBox(height: 20),
+                            _buildTextField(
+                              controller: _emailController,
+                              label: 'Email',
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            const SizedBox(height: 20),
+                            _buildTextField(
+                              controller: _phoneController,
+                              label: 'Nomor Telepon',
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                            ),
+                            const SizedBox(height: 20),
+                            _buildTextField(
+                              controller: _addressController,
+                              label: 'Alamat',
+                              icon: Icons.home_outlined,
+                              maxLines: 2,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 30),
                     SizedBox(
@@ -130,13 +177,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _submitForm,
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0A5099),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
+                          elevation: 2,
                         ),
                         child: const Text(
                           'SIMPAN PERUBAHAN',
-                          style: TextStyle(fontSize: 16),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -158,14 +212,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      style: const TextStyle(fontFamily: 'Poppins'),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
-        border: const OutlineInputBorder(),
+        labelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          color: Colors.grey,
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: const Color(0xFF0A5099),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.grey),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.grey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: Color(0xFF0A5099),
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 15,
+          horizontal: 15,
+        ),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'Harap masukkan $label';
+        }
+        if (label == 'Email' && !value.contains('@')) {
+          return 'Email tidak valid';
         }
         return null;
       },

@@ -12,7 +12,7 @@ class MqttService {
   static final MqttService _instance = MqttService._internal();
   MqttServerClient? client;
   final String _controlTopicPrefix = 'smartpower/device/control';
-
+  // bool isConnected = false;
   factory MqttService({
     OnMessageReceived? onMessageReceived,
     OnConnectionStatusChanged? onConnectionStatusChanged,
@@ -91,6 +91,10 @@ class MqttService {
     }
     onConnectionStatusChanged?.call(MqttConnectionState.disconnected);
     return false;
+  }
+
+  bool get isConnected {
+    return client?.connectionStatus?.state == MqttConnectionState.connected;
   }
 
   void _onConnected() => debugPrint('MQTT connection established');

@@ -11,11 +11,25 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF1F4F9),
       appBar: AppBar(
-        title: const Text('Pengaturan Akun'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: const Text(
+          'Pengaturan Akun',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: const Color(0xFF0A5099),
       ),
       body: Stack(
         children: [
@@ -122,6 +136,7 @@ class SettingsPage extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(15),
         child: Column(
@@ -134,7 +149,8 @@ class SettingsPage extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  fontFamily: 'Poppins',
+                  color: Color(0xFF0A5099),
                 ),
               ),
             ),
@@ -154,12 +170,15 @@ class SettingsPage extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
       leading: Icon(
         icon,
-        color: Colors.blue,
+        color: const Color(0xFF0A5099),
+        size: 24,
       ),
       title: Text(
         title,
         style: const TextStyle(
           fontWeight: FontWeight.w500,
+          fontFamily: 'Poppins',
+          fontSize: 15,
         ),
       ),
       trailing: const Icon(
@@ -167,6 +186,9 @@ class SettingsPage extends StatelessWidget {
         color: Colors.grey,
       ),
       onTap: onTap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
     );
   }
 }
