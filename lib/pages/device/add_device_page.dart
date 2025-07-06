@@ -79,7 +79,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
 
   Future<void> _submitForm() async {
     final s = AppLocalizations.of(context)!;
-    
+
     if (!_formKey.currentState!.validate()) return;
     if (_installationDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -172,12 +172,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: const Color(0xFF0A5099),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save, color: Colors.white),
-            onPressed: _isLoading ? null : _submitForm,
-          ),
-        ],
+        actions: [],
       ),
       body: Stack(
         children: [
@@ -202,7 +197,6 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                             controller: _nameController,
                             prefixIcon: Icons.devices_other,
                             iconColor: const Color(0xFF0A5099),
-                            
                           ),
                           const SizedBox(height: 20),
                           CustomTextField(
@@ -210,7 +204,6 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                             controller: _deviceIdController,
                             prefixIcon: Icons.confirmation_number,
                             iconColor: const Color(0xFF0A5099),
-                            
                           ),
                           const SizedBox(height: 20),
                           DropdownButtonFormField<String>(
@@ -222,7 +215,11 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                                 value: value,
                                 child: Text(
                                   value.capitalize(),
-                                  style: const TextStyle(fontFamily: 'Poppins'),
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    color: Colors
+                                        .black, // teks dropdown tidak putih
+                                  ),
                                 ),
                               );
                             }).toList(),
@@ -235,17 +232,19 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                                 fontFamily: 'Poppins',
                                 color: Colors.grey,
                               ),
-                              prefixIcon: Icon(
+                              prefixIcon: const Icon(
                                 Icons.category,
-                                color: const Color(0xFF0A5099),
+                                color: Color(0xFF0A5099),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: Colors.grey),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: Colors.grey),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -259,7 +258,12 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                                 horizontal: 15,
                               ),
                             ),
-                            style: const TextStyle(fontFamily: 'Poppins'),
+                            dropdownColor:
+                                Colors.white, // warna latar belakang dropdown
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Colors.black, // warna teks input terpilih
+                            ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return s.pleaseSelectDeviceType;
@@ -273,7 +277,6 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                             controller: _buildingController,
                             prefixIcon: Icons.location_city,
                             iconColor: const Color(0xFF0A5099),
-                            
                           ),
                           const SizedBox(height: 20),
                           InkWell(
@@ -291,11 +294,13 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: Colors.grey),
+                                  borderSide:
+                                      const BorderSide(color: Colors.grey),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: Colors.grey),
+                                  borderSide:
+                                      const BorderSide(color: Colors.grey),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
@@ -316,7 +321,8 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
                                         ? s.selectDateText
                                         : DateFormat('yyyy-MM-dd')
                                             .format(_installationDate!),
-                                    style: const TextStyle(fontFamily: 'Poppins'),
+                                    style:
+                                        const TextStyle(fontFamily: 'Poppins'),
                                   ),
                                 ],
                               ),

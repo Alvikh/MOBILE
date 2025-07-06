@@ -14,7 +14,7 @@ class AuthService {
         {
           "email": email,
           "password": password,
-          "confirmPassword": confirmPassword,
+          "password_confirmation": confirmPassword,
         },
         useToken: false,
       );
