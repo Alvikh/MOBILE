@@ -1,11 +1,78 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/pages/account/settings_page.dart';
+import 'package:ta_mobile/pages/auth/sign_in_page.dart';
+import 'package:ta_mobile/services/account_service.dart';
+import 'package:ta_mobile/services/api_service.dart';
+import 'package:ta_mobile/services/auth_service.dart';
 import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
 
-class AccountPage extends StatelessWidget {
+class AccountPage extends StatefulWidget {
   const AccountPage({Key? key}) : super(key: key);
+
+  @override
+  State<AccountPage> createState() => _AccountPageState();
+}
+
+class _AccountPageState extends State<AccountPage> {
+  File? _selectedImage;
+  bool _isUploading = false;
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+      await _uploadProfilePhoto();
+    }
+  }
+
+  Future<void> _uploadProfilePhoto() async {
+    if (_selectedImage == null) return;
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      final result = await AccountService.uploadProfilePhoto(_selectedImage!);
+      
+      if (result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Profile photo updated')),
+        );
+        // Refresh user data
+        await _refreshProfile();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Failed to update photo')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isUploading = false;
+        _selectedImage = null;
+      });
+    }
+  }
+
+  Future<void> _refreshProfile() async {
+    final result = await AccountService.getProfile();
+    if (result['success'] == true) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,34 +116,70 @@ class AccountPage extends StatelessWidget {
                         Stack(
                           alignment: Alignment.bottomRight,
                           children: [
-                            CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.white,
-                              child: User().profilePhotoPath != null
-                                  ? ClipOval(
-                                      child: Image.network(
-                                        User().profilePhotoPath.toString(),
-                                        width: 95,
-                                        height: 95,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.person,
-                                      size: 50,
-                                      color: Colors.grey[600],
-                                    ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
+                            GestureDetector(
+                              onTap: _pickImage,
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.white,
+                                child: _isUploading
+                                    ? const CircularProgressIndicator()
+                                    : _selectedImage != null
+                                        ? ClipOval(
+                                            child: Image.file(
+                                              _selectedImage!,
+                                              width: 95,
+                                              height: 95,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : User().profilePhotoPath != null
+                                            ? ClipOval(
+                                                child: Image.network(
+                                                  "${ApiService().url}storage/${User().profilePhotoPath.toString()}",
+                                                  width: 95,
+                                                  height: 95,
+                                                  fit: BoxFit.cover,
+                                                  loadingBuilder: (BuildContext context, Widget child,
+                                                      ImageChunkEvent? loadingProgress) {
+                                                    if (loadingProgress == null) return child;
+                                                    return Center(
+                                                      child: CircularProgressIndicator(
+                                                        value: loadingProgress.expectedTotalBytes != null
+                                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                                loadingProgress.expectedTotalBytes!
+                                                            : null,
+                                                      ),
+                                                    );
+                                                  },
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Icon(
+                                                      Icons.person,
+                                                      size: 50,
+                                                      color: Colors.grey[600],
+                                                    );
+                                                  },
+                                                ),
+                                              )
+                                            : Icon(
+                                                Icons.person,
+                                                size: 50,
+                                                color: Colors.grey[600],
+                                              ),
                               ),
-                              child: const Icon(
-                                Icons.edit,
-                                size: 18,
-                                color: Color(0xFF0A5099),
+                            ),
+                            GestureDetector(
+                              onTap: _pickImage,
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.edit,
+                                  size: 18,
+                                  color: Color(0xFF0A5099),
+                                ),
                               ),
                             ),
                           ],
@@ -105,7 +208,7 @@ class AccountPage extends StatelessWidget {
                   ),
                 ),
 
-                // User Details Section
+                // Rest of your existing widgets...
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -302,8 +405,14 @@ class AccountPage extends StatelessWidget {
                 ),
               ),
               onPressed: () {
+                AuthService.logout();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>  SignInPage()),
+                );
                 // Handle logout logic
-                Navigator.of(context).pop();
+                // Navigator.of(context).pop();
               },
             ),
           ],

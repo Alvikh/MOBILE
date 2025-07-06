@@ -1,0 +1,105 @@
+import 'package:ta_mobile/services/api_service.dart';
+
+class EnergyAnalyticsService {
+  final ApiService _apiService = ApiService();
+
+  Future<Map<String, dynamic>> getDeviceData(String deviceId) async {
+    try {
+      final response = await _apiService.get(
+        '/energy/device/$deviceId',
+      );
+
+      if (response['success'] == true) {
+        return {
+          'success': true,
+          'data': response['data'],
+        };
+      } else {
+        throw ApiException(
+          message: response['message'] ?? 'Failed to fetch device data',
+          statusCode: response['statusCode'],
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getPredictionData(String deviceId) async {
+    try {
+      final response = await _apiService.get(
+        '/energy/device/$deviceId/prediction',
+      );
+
+      if (response['success'] == true) {
+        return {
+          'success': true,
+          'data': response['data'],
+        };
+      } else {
+        throw ApiException(
+          message: response['message'] ?? 'Failed to fetch prediction data',
+          statusCode: response['statusCode'],
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getConsumptionHistory(
+    String deviceId, {
+    String period = 'day',
+    int days = 7,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        '/energy/device/$deviceId/consumption',
+        body: {
+          'period': period,
+          'days': days,
+        },
+      );
+
+      if (response['success'] == true) {
+        return {
+          'success': true,
+          'data': response['data'],
+        };
+      } else {
+        throw ApiException(
+          message: response['message'] ?? 'Failed to fetch consumption history',
+          statusCode: response['statusCode'],
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> storeMeasurement(
+    String deviceId,
+    Map<String, dynamic> measurementData,
+  ) async {
+    try {
+      final response = await _apiService.post(
+        '/energy/device/$deviceId/measurement',
+        measurementData,
+      );
+
+      if (response['success'] == true) {
+        return {
+          'success': true,
+          'message': 'Measurement stored successfully',
+        };
+      } else {
+        throw ApiException(
+          message: response['message'] ?? 'Failed to store measurement',
+          statusCode: response['statusCode'],
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+}

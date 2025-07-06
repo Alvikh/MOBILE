@@ -179,6 +179,7 @@
 // }
 
 import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/services/api_service.dart';
@@ -280,10 +281,12 @@ class AccountService {
       };
     }
   }
-
-  /// Upload foto profil pengguna
-  static Future<Map<String, dynamic>> uploadProfilePhoto(File photoFile) async {
+static Future<Map<String, dynamic>> uploadProfilePhoto(File photoFile) async {
     try {
+      print('[DEBUG] Starting profile photo upload...');
+      print('[DEBUG] File path: ${photoFile.path}');
+      print('[DEBUG] File size: ${(await photoFile.length()) / 1024} KB');
+
       final formData = FormData.fromMap({
         'photo': await MultipartFile.fromFile(
           photoFile.path,
@@ -296,16 +299,30 @@ class AccountService {
         headers: {
           'Authorization': 'Bearer ${ApiService().getToken()}',
           'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
         },
+        validateStatus: (status) => true, // To handle 402 status manually
       ));
+
+      print('[DEBUG] Sending request to: ${ApiService().baseUrl}/profile/photo');
+      print('[DEBUG] Headers: ${{
+        'Authorization': 'Bearer ${ApiService().getToken()}',
+        'Accept': 'application/json',
+      }}');
 
       final response = await dio.post('/profile/photo', data: formData);
 
+      print('[DEBUG] Response status: ${response.statusCode}');
+      print('[DEBUG] Response data: ${response.data}');
+      print('[DEBUG] Response headers: ${response.headers}');
+
       if (response.statusCode == 200 && response.data['success'] == true) {
+        print('[DEBUG] Photo upload successful');
         final user = await UserPreferencesService().getUser();
         if (user != null) {
-          user.profilePhotoPath = response.data['photo_url'];
+          user.profilePhotoPath = '${ApiService().url}storage/${response.data['photo_url']}';
           await UserPreferencesService().saveUser(user);
+          print('[DEBUG] User profile updated locally');
         }
 
         return {
@@ -314,15 +331,32 @@ class AccountService {
           'photo_url': response.data['photo_url'],
         };
       } else {
+        print('[ERROR] Photo upload failed with status ${response.statusCode}');
+        print('[ERROR] Server response: ${response.data}');
+        
+        String errorMessage = 'Failed to update photo';
+        if (response.statusCode == 402) {
+          errorMessage = 'Payment required: ${response.data['message'] ?? 'Please check your subscription'}';
+        } else if (response.data != null && response.data['message'] != null) {
+          errorMessage = response.data['message'];
+        }
+
         return {
           'success': false,
-          'message': response.data['message'] ?? 'Failed to update photo',
+          'message': errorMessage,
+          'status_code': response.statusCode,
+          'response_data': response.data,
         };
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[EXCEPTION] Error uploading photo: $e');
+      print('[STACK TRACE] $stackTrace');
+      
       return {
         'success': false,
-        'message': 'Error uploading photo: $e',
+        'message': 'Error uploading photo: ${e.toString()}',
+        'exception': e.toString(),
+        'stack_trace': stackTrace.toString(),
       };
     }
   }

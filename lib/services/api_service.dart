@@ -4,7 +4,8 @@ import 'package:ta_mobile/routes.dart';
 import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
 
 class ApiEndpoints {
-  static const String baseUrl = 'https://pey.my.id/api';
+  static const String url = 'https://pey.my.id';
+  static const String baseUrl = '$url/api';
 
   static String get register => '/register';
   static String get login => '/login';
@@ -22,6 +23,7 @@ class ApiService {
   String? _token;
 
   String get baseUrl => ApiEndpoints.baseUrl;
+  String get url => ApiEndpoints.url;
 
   void _initDio() {
     _dio = Dio(

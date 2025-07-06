@@ -8,6 +8,7 @@ import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/pages/device/add_device_page.dart';
+import 'package:ta_mobile/services/energy_analytic_service.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
 import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
 
@@ -255,12 +256,24 @@ class _MonitoringPageState extends State<MonitoringPage> {
     humidity = '-';
   }
 
+  Map<String, dynamic> _predictionData = {};
+  bool _isLoadingPrediction = false;
+  String _predictionError = '';
   @override
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context)!;
     final bool hasMonitoringDevice = monitoringDevices.isNotEmpty;
     final totalMonitoringDevices = monitoringDevices.length;
-
+      final EnergyAnalyticsService _energyAnalyticsService = EnergyAnalyticsService();
+void _switchDevice(int index) {
+  if (index >= 0 && index < monitoringDevices.length) {
+    setState(() {
+      currentDeviceIndex = index;
+      _resetMetrics();
+    });
+    _fetchPredictionData(); // Add this line
+  }
+}
     return Scaffold(
       backgroundColor: const Color(0xFF0A5099),
       body: Stack(
@@ -324,7 +337,130 @@ class _MonitoringPageState extends State<MonitoringPage> {
       ),
     );
   }
+Future<void> _fetchPredictionData() async {
+  if (monitoringDevices.isEmpty) return;
 
+  setState(() {
+    _isLoadingPrediction = true;
+    _predictionError = '';
+  });
+
+  try {
+    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+    final response = await EnergyAnalyticsService().getPredictionData(monitoringDevices[currentDeviceIndex].id.toString());
+    
+    if (response['success'] == true) {
+      setState(() {
+        _predictionData = response['data'];
+      });
+    } else {
+      setState(() {
+        _predictionError = 'Failed to load prediction data';
+      });
+    }
+  } catch (e) {
+    setState(() {
+      _predictionError = e.toString();
+    });
+  } finally {
+    setState(() {
+      _isLoadingPrediction = false;
+    });
+  }
+}
+Widget _buildPredictionSection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 20),
+      const Text(
+        'Energy Prediction',
+        style: TextStyle(
+          fontSize: 16,
+          fontFamily: 'Poppins',
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF0A5099),
+        ),
+      ),
+      const SizedBox(height: 10),
+      Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            children: [
+              if (_predictionData['plot_url'] != null)
+                Image.network(
+                  _predictionData['plot_url'],
+                  height: 200,
+                  fit: BoxFit.contain,
+                ),
+              const SizedBox(height: 15),
+              _buildPredictionSummary(),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _buildPredictionSummary() {
+  final aggregates = _predictionData['aggregates'] ?? {};
+  
+  return Column(
+    children: [
+      _buildPredictionRow(
+        'Predicted Period',
+        '${_predictionData['labels']?.first ?? ''} to ${_predictionData['labels']?.last ?? ''}'
+      ),
+      _buildPredictionRow(
+        'Total Predicted Consumption',
+        '${aggregates['total_energy']?.toStringAsFixed(2) ?? '0'} kWh'
+      ),
+      _buildPredictionRow(
+        'Estimated Cost',
+        'Rp${NumberFormat("#,###").format(aggregates['estimated_cost']?.toInt() ?? 0)}'
+      ),
+      _buildPredictionRow(
+        'Average Daily Usage',
+        '${aggregates['average_power']?.toStringAsFixed(2) ?? '0'} kWh'
+      ),
+      _buildPredictionRow(
+        'Peak Power',
+        '${aggregates['peak_power']?.toStringAsFixed(2) ?? '0'} kWh'
+      ),
+    ],
+  );
+}
+
+Widget _buildPredictionRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+}
   Widget _buildHeader(AppLocalizations s) {
     return SafeArea(
       child: Container(
@@ -493,6 +629,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
       ],
     );
   }
+
 
   Widget _buildDateTimeCard() {
     return Container(

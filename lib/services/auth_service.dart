@@ -222,7 +222,6 @@ class AuthService {
         useToken: true,
       );
 
-      // 2. Clear local data regardless of API response
       await _clearAuthData();
 
       // 3. Return appropriate response
