@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ta_mobile/l10n/app_localizations.dart';
-import 'package:ta_mobile/pages/home/home_page.dart';
+import 'package:ta_mobile/services/api_service.dart';
 import 'package:ta_mobile/widgets/custom_bottom_container.dart';
 import 'package:ta_mobile/widgets/custom_elevated_button.dart';
 import 'package:ta_mobile/widgets/custom_text_field.dart';
@@ -13,7 +13,7 @@ class ForgotPasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context);
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -87,14 +87,47 @@ class ForgotPasswordPage extends StatelessWidget {
 
                 // Send Button
                 CustomElevatedButton(
-                  text: s.send,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomePage()),
-                    );
-                  },
-                ),
+                    text: s.send,
+                    onPressed: () async {
+                      final email = emailController.text.trim();
+
+                      if (email.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(s.emailRequired)),
+                        );
+                        return;
+                      }
+
+                      try {
+                        final response = await ApiService().post(
+                          ApiService().forgotPassword,
+                          {'email': email},
+                          useToken: false,
+                        );
+
+                        print("FORGOT RESPONSE: $response");
+
+                        if (response['success'] == true) {
+                          emailController.text = "";
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(s.linkSentSuccess)),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(response['message'] ??
+                                    'Gagal mengirim email')),
+                          );
+                        }
+                      } catch (e) {
+                        print("ERROR: $e");
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content:
+                                  Text('Terjadi kesalahan: ${e.toString()}')),
+                        );
+                      }
+                    }),
               ],
             ),
           ),

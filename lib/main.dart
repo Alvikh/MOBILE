@@ -36,6 +36,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ta_mobile/l10n/app_localizations.dart';
+import 'package:ta_mobile/main_wrapper.dart';
 import 'package:ta_mobile/pages/auth/sign_in_page.dart';
 import 'package:ta_mobile/pages/home/home_page.dart';
 import 'package:ta_mobile/pages/partial/splash_page.dart';
@@ -117,7 +118,11 @@ class _MyAppState extends State<MyApp> {
       routes: {
         AppRoutes.login: (context) => SignInPage(),
         AppRoutes.home: (context) => const HomePage(),
-      },
+    '/main': (context) {
+      final index = ModalRoute.of(context)!.settings.arguments as int? ?? 0;
+      return MainWrapper(initialIndex: index);
+    }},
+
       home: const SplashPage(),
     );
   }

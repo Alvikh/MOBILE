@@ -218,5 +218,8 @@
   "monitorMetricHumidity": "Kelembapan",
   "welcomeGetStarted": "Mulai Sekarang",
   "welcomeSignUp": "Daftar",
-  "welcomeSignIn": "Masuk"
+  "welcomeSignIn": "Masuk",
+  "emailRequired": "Email wajib diisi.",
+  "linkSentSuccess": "Tautan reset berhasil dikirim ke email kamu.",
+  "linkSentFailed": "Gagal mengirim tautan reset. Coba lagi nanti."
 }

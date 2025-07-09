@@ -1,25 +1,24 @@
-import 'dart:math';
-
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:ta_mobile/data/device_data.dart';
+import 'package:ta_mobile/data/device_data_provider.dart';
 import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/pages/device/add_device_page.dart';
 import 'package:ta_mobile/services/energy_analytic_service.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
-import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
 
-class MonitoringPage extends StatefulWidget {
+class MonitoringPage extends ConsumerStatefulWidget {
   const MonitoringPage({Key? key}) : super(key: key);
 
   @override
-  State<MonitoringPage> createState() => _MonitoringPageState();
+  ConsumerState<MonitoringPage> createState() => _MonitoringPageState();
 }
 
-class _MonitoringPageState extends State<MonitoringPage> {
+class _MonitoringPageState extends ConsumerState<MonitoringPage> {
   late MqttService mqttService;
   String tanggal = '-';
   String waktu = '-';
@@ -31,7 +30,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
   String powerFactor = '-';
   String temperature = '-';
   String humidity = '-';
-
+  DeviceData? device;
   int currentDeviceIndex = 0;
   late List<Device> monitoringDevices;
 
@@ -43,12 +42,24 @@ class _MonitoringPageState extends State<MonitoringPage> {
   final List<String> periodOptions = ['Daily', 'Weekly', 'Monthly', 'Yearly'];
   final TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: true);
 
+  // Analytics service and data
+  final EnergyAnalyticsService _energyAnalyticsService =
+      EnergyAnalyticsService();
+  Map<String, dynamic> _metrics = {};
+  Map<String, dynamic> _deviceData = {};
+  Map<String, dynamic> _consumptionHistory = {};
+  Map<String, dynamic> _predictionData = {};
+  Map<String, dynamic> _energyHistory = {};
+  List<Map<String, dynamic>> _dailyConsumption = [];
+  bool _isLoading = false;
+  String _errorMessage = '';
+
   @override
   void initState() {
     super.initState();
     _initializeData();
     _initializeMqttService();
-    _generateSampleHistoryData();
+    _fetchInitialData();
   }
 
   void _initializeData() {
@@ -95,6 +106,127 @@ class _MonitoringPageState extends State<MonitoringPage> {
         }
       },
     );
+  }
+
+  Future<void> _fetchInitialData() async {
+  if (monitoringDevices.isEmpty) return;
+
+  setState(() {
+    _isLoading = true;
+    _errorMessage = '';
+  });
+
+  try {
+    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+    final id = monitoringDevices[currentDeviceIndex].id;
+
+    // Cek apakah data sudah ada di provider
+    final existingData = ref.read(deviceDataProvider);
+
+    Map<String, dynamic> results;
+
+    if (existingData.isNotEmpty) {
+      print("✅ Menggunakan data dari provider");
+      results = existingData; // gunakan dari provider
+    } else {
+      print("🔄 Fetch dari API karena provider kosong");
+      results = await _energyAnalyticsService.getDeviceData(id!);
+      ref.read(deviceDataProvider.notifier).updateDeviceData(results);
+    }
+
+    // Proses data ke UI
+    setState(() {
+      print("API Response: $results");
+
+      _deviceData = results['data']['device'];
+      _consumptionHistory = results['data']['consumption'];
+      _predictionData = results['data']['prediction'] ?? {};
+      _energyHistory = results['data']['energy_history'] ?? {};
+      _metrics = results['data']['metrics'] ?? {};
+
+      print("record isss $_predictionData");
+
+      // Process energy history
+      if (_energyHistory['records'] != null) {
+        energyHistory[deviceId] = List<Map<String, dynamic>>.from(
+          (_energyHistory['records'] as List).map((record) {
+            final recordMap = record as Map<String, dynamic>;
+            final energyVal = double.tryParse(recordMap['energy'].toString()) ?? 0.0;
+            final avgPowerVal = double.tryParse(recordMap['avg_power'].toString()) ?? 0.0;
+
+            return {
+              'date': DateTime.tryParse(recordMap['date']) ?? DateTime.now(),
+              'energy': energyVal / 1000,
+              'cost': energyVal * 1444.70 / 1000,
+              'duration': recordMap['duration'],
+              'avg_power': avgPowerVal,
+            };
+          }).toList(),
+        );
+      }
+
+      // Process daily consumption
+      if (_consumptionHistory['daily'] != null) {
+        final daily = _consumptionHistory['daily'];
+        final dailyLabels = daily['labels'] as List<dynamic>;
+        final dailyData = daily['data'] as List<dynamic>;
+
+        _dailyConsumption = List<Map<String, dynamic>>.generate(
+          dailyLabels.length,
+          (index) => {
+            'date': _parseCustomDate(dailyLabels[index].toString()),
+            'energy': dailyData[index] is num ? dailyData[index].toDouble() : 0.0,
+          },
+        );
+      }
+    });
+  } catch (e) {
+    print('❌ Failed to load data: $e');
+    setState(() {
+      _errorMessage = 'Failed to load data: $e';
+    });
+  } finally {
+    setState(() {
+      _isLoading = false;
+    });
+  }
+}
+
+
+  int _getMonthNumber(String monthAbbr) {
+    const months = {
+      'Jan': 1,
+      'Feb': 2,
+      'Mar': 3,
+      'Apr': 4,
+      'May': 5,
+      'Jun': 6,
+      'Jul': 7,
+      'Aug': 8,
+      'Sep': 9,
+      'Oct': 10,
+      'Nov': 11,
+      'Dec': 12
+    };
+    return months[monthAbbr] ?? DateTime.now().month;
+  }
+
+  DateTime _parseCustomDate(String dateStr) {
+    try {
+      final parts = dateStr.trim().split(' ');
+      if (parts.length != 2) {
+        throw FormatException('Invalid format: $dateStr');
+      }
+
+      final month = _getMonthNumber(parts[0]);
+      final day = int.tryParse(parts[1]) ?? 1;
+      final year = DateTime.now().year;
+
+      return DateTime(year, month, day);
+    } catch (e) {
+      print('Date parsing failed for "$dateStr": $e');
+      return DateTime.now(); // fallback ke waktu sekarang jika gagal
+    }
   }
 
   void _updateDateTime(String? measuredAt) {
@@ -160,67 +292,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
     updateData('Humidity', humidity);
   }
 
-  void _generateSampleHistoryData() {
-    final now = DateTime.now();
-    final deviceId = monitoringDevices.isNotEmpty
-        ? monitoringDevices[currentDeviceIndex].deviceId
-        : '';
-
-    if (deviceId.isEmpty) return;
-
-    // Generate daily data for the past 7 days
-    final List<Map<String, dynamic>> dailyData = [];
-    for (int i = 6; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i));
-      dailyData.add({
-        'date': date,
-        'energy': 30.0 + Random().nextDouble() * 20,
-        'cost': (30.0 + Random().nextDouble() * 20) * 1444.70,
-      });
-    }
-
-    // Generate weekly data for the past 4 weeks
-    final List<Map<String, dynamic>> weeklyData = [];
-    for (int i = 3; i >= 0; i--) {
-      final startDate = now.subtract(Duration(days: 7 * (i + 1)));
-      final endDate = now.subtract(Duration(days: 7 * i));
-      weeklyData.add({
-        'date': endDate,
-        'energy': 210.0 + Random().nextDouble() * 140,
-        'cost': (210.0 + Random().nextDouble() * 140) * 1444.70,
-      });
-    }
-
-    // Generate monthly data for the past 6 months
-    final List<Map<String, dynamic>> monthlyData = [];
-    for (int i = 5; i >= 0; i--) {
-      final date = DateTime(now.year, now.month - i, 1);
-      monthlyData.add({
-        'date': date,
-        'energy': 900.0 + Random().nextDouble() * 600,
-        'cost': (900.0 + Random().nextDouble() * 600) * 1444.70,
-      });
-    }
-
-    // Generate yearly data for the past 3 years
-    final List<Map<String, dynamic>> yearlyData = [];
-    for (int i = 2; i >= 0; i--) {
-      final date = DateTime(now.year - i, 1, 1);
-      yearlyData.add({
-        'date': date,
-        'energy': 10800.0 + Random().nextDouble() * 7200,
-        'cost': (10800.0 + Random().nextDouble() * 7200) * 1444.70,
-      });
-    }
-
-    energyHistory[deviceId] = [
-      ...dailyData,
-      ...weeklyData,
-      ...monthlyData,
-      ...yearlyData,
-    ];
-  }
-
   String? _formatDouble(dynamic value) {
     if (value == null) return null;
     final numValue = value is num ? value : double.tryParse(value.toString());
@@ -240,6 +311,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
         currentDeviceIndex = index;
         _resetMetrics();
       });
+      _fetchInitialData();
     }
   }
 
@@ -256,24 +328,376 @@ class _MonitoringPageState extends State<MonitoringPage> {
     humidity = '-';
   }
 
-  Map<String, dynamic> _predictionData = {};
-  bool _isLoadingPrediction = false;
-  String _predictionError = '';
+  Widget _buildPredictionSection() {
+    // Pastikan data prediction ada dan valid dengan cara null-safety yang benar
+    if (_predictionData == null ||
+        _predictionData!['daily_predictions'] == null ||
+        _predictionData!['monthly_predictions'] == null ||
+        _predictionData!['yearly_predictions'] == null) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        child: Text(
+          'Data prediksi tidak tersedia',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    final dailyPredictions =
+        List<dynamic>.from(_predictionData!['daily_predictions'] ?? []);
+    final monthlyPredictions =
+        List<dynamic>.from(_predictionData!['monthly_predictions'] ?? []);
+    final yearlyPredictions =
+        List<dynamic>.from(_predictionData!['yearly_predictions'] ?? []);
+
+    return SingleChildScrollView(
+      // Tambahkan ini untuk kompatibilitas dengan PageView
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 20),
+          Text(
+            'Energy Prediction',
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0A5099),
+            ),
+          ),
+          SizedBox(height: 10),
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(15),
+              child: Column(
+                children: [
+                  if (dailyPredictions.isNotEmpty) ...[
+                    _buildPredictionTable(
+                      title: 'Prediksi Harian',
+                      data: dailyPredictions.take(7).toList(),
+                      columns: [
+                        'period',
+                        'average_power_w',
+                        'total_energy_kwh',
+                        'estimated_cost'
+                      ],
+                      headers: [
+                        'Tanggal',
+                        'Daya Rata2 (W)',
+                        'Energi (kWh)',
+                        'Perkiraan Biaya'
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                  ],
+                  if (monthlyPredictions.isNotEmpty) ...[
+                    _buildPredictionTable(
+                      title: 'Prediksi Bulanan',
+                      data: monthlyPredictions,
+                      columns: [
+                        'period',
+                        'average_power_w',
+                        'total_energy_kwh',
+                        'estimated_cost'
+                      ],
+                      headers: [
+                        'Bulan',
+                        'Daya Rata2 (W)',
+                        'Energi (kWh)',
+                        'Perkiraan Biaya'
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                  ],
+                  if (yearlyPredictions.isNotEmpty) ...[
+                    _buildPredictionTable(
+                      title: 'Prediksi Tahunan',
+                      data: yearlyPredictions,
+                      columns: [
+                        'period',
+                        'average_power_w',
+                        'total_energy_kwh',
+                        'estimated_cost'
+                      ],
+                      headers: [
+                        'Tahun',
+                        'Daya Rata2 (W)',
+                        'Energi (kWh)',
+                        'Perkiraan Biaya'
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyPrediction(List<dynamic> dailyPredictions) {
+    // Ambil 7 data terbaru atau semua data jika kurang dari 7
+    final last7Days = dailyPredictions.length > 7
+        ? dailyPredictions.sublist(dailyPredictions.length - 7)
+        : dailyPredictions;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Prediksi Harian (7 Hari Terakhir)',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0A5099),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                // Header Tabel
+                const Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        'Tanggal',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Energi (kWh)',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Biaya',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 16),
+                // Data Tabel
+                ...last7Days.map((day) {
+                  final energy =
+                      day['total_energy_kwh']?.toStringAsFixed(2) ?? '0.00';
+                  final cost = day['estimated_cost'] != null
+                      ? NumberFormat("#,###")
+                          .format(day['estimated_cost'].toInt())
+                      : '0';
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            day['period'] ?? '-',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            energy,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Rp$cost',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPredictionSummary() {
+    final metrics = _metrics;
+    final units = metrics['units'] ?? {};
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ringkasan Konsumsi',
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0A5099),
+            ),
+          ),
+          SizedBox(height: 12),
+          _buildStyledPredictionRow('Rata-rata Harian',
+              '${metrics['avg_daily_power']?.toStringAsFixed(2) ?? '0'} ${units['power'] ?? 'W'}'),
+          _buildStyledPredictionRow('Daya Puncak Hari Ini',
+              '${metrics['peak_power_today']?.toStringAsFixed(2) ?? '0'} ${units['power'] ?? 'W'}'),
+          _buildStyledPredictionRow('Energi Hari Ini',
+              '${(metrics['energy_today'] ?? 0).toStringAsFixed(2)} ${units['energy'] ?? 'kWh'}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStyledPredictionRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0A5099),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPredictionTable({
+    required String title,
+    required List<dynamic> data,
+    required List<String> columns,
+    required List<String> headers,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0A5099),
+          ),
+        ),
+        SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columnSpacing: 20,
+            columns: headers
+                .map((header) => DataColumn(
+                      label: Text(header,
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ))
+                .toList(),
+            rows: data.map<DataRow>((item) {
+              return DataRow(
+                cells: columns.map<DataCell>((col) {
+                  final value = item[col];
+                  String displayText = '-';
+
+                  if (value != null) {
+                    if (col == 'estimated_cost') {
+                      displayText =
+                          'Rp${NumberFormat("#,###").format(value.toInt())}';
+                    } else if (value is num) {
+                      displayText = value.toStringAsFixed(2);
+                    } else {
+                      displayText = value.toString();
+                    }
+                  }
+
+                  return DataCell(Text(displayText));
+                }).toList(),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPredictionRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context)!;
     final bool hasMonitoringDevice = monitoringDevices.isNotEmpty;
-    final totalMonitoringDevices = monitoringDevices.length;
-      final EnergyAnalyticsService _energyAnalyticsService = EnergyAnalyticsService();
-void _switchDevice(int index) {
-  if (index >= 0 && index < monitoringDevices.length) {
-    setState(() {
-      currentDeviceIndex = index;
-      _resetMetrics();
-    });
-    _fetchPredictionData(); // Add this line
-  }
-}
+final deviceData = ref.watch(deviceDataProvider);
+  print("Current state in UI: $deviceData");
     return Scaffold(
       backgroundColor: const Color(0xFF0A5099),
       body: Stack(
@@ -301,6 +725,15 @@ void _switchDevice(int index) {
                                         CrossAxisAlignment.start,
                                     children: [
                                       _buildDeviceSwitcher(context),
+                                      if (_isLoading)
+                                        const Center(
+                                            child: CircularProgressIndicator()),
+                                      if (_errorMessage.isNotEmpty)
+                                        Text(
+                                          _errorMessage,
+                                          style: const TextStyle(
+                                              color: Colors.red),
+                                        ),
                                       const SizedBox(height: 15),
                                       Text(
                                         s.monitorLiveTitle,
@@ -320,6 +753,8 @@ void _switchDevice(int index) {
                                       _buildEnergyUsageChart(),
                                       const SizedBox(height: 20),
                                       _buildEnergyHistorySection(s),
+                                      const SizedBox(height: 20),
+                                      _buildPredictionSection(),
                                     ],
                                   )
                                 : _buildNoDeviceCard(s),
@@ -332,135 +767,12 @@ void _switchDevice(int index) {
               ),
             ],
           ),
-          const CustomFloatingNavbar(selectedIndex: 1),
+          // const CustomFloatingNavbar(selectedIndex: 1),
         ],
       ),
     );
   }
-Future<void> _fetchPredictionData() async {
-  if (monitoringDevices.isEmpty) return;
 
-  setState(() {
-    _isLoadingPrediction = true;
-    _predictionError = '';
-  });
-
-  try {
-    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
-    final response = await EnergyAnalyticsService().getPredictionData(monitoringDevices[currentDeviceIndex].id.toString());
-    
-    if (response['success'] == true) {
-      setState(() {
-        _predictionData = response['data'];
-      });
-    } else {
-      setState(() {
-        _predictionError = 'Failed to load prediction data';
-      });
-    }
-  } catch (e) {
-    setState(() {
-      _predictionError = e.toString();
-    });
-  } finally {
-    setState(() {
-      _isLoadingPrediction = false;
-    });
-  }
-}
-Widget _buildPredictionSection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const SizedBox(height: 20),
-      const Text(
-        'Energy Prediction',
-        style: TextStyle(
-          fontSize: 16,
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF0A5099),
-        ),
-      ),
-      const SizedBox(height: 10),
-      Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            children: [
-              if (_predictionData['plot_url'] != null)
-                Image.network(
-                  _predictionData['plot_url'],
-                  height: 200,
-                  fit: BoxFit.contain,
-                ),
-              const SizedBox(height: 15),
-              _buildPredictionSummary(),
-            ],
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-Widget _buildPredictionSummary() {
-  final aggregates = _predictionData['aggregates'] ?? {};
-  
-  return Column(
-    children: [
-      _buildPredictionRow(
-        'Predicted Period',
-        '${_predictionData['labels']?.first ?? ''} to ${_predictionData['labels']?.last ?? ''}'
-      ),
-      _buildPredictionRow(
-        'Total Predicted Consumption',
-        '${aggregates['total_energy']?.toStringAsFixed(2) ?? '0'} kWh'
-      ),
-      _buildPredictionRow(
-        'Estimated Cost',
-        'Rp${NumberFormat("#,###").format(aggregates['estimated_cost']?.toInt() ?? 0)}'
-      ),
-      _buildPredictionRow(
-        'Average Daily Usage',
-        '${aggregates['average_power']?.toStringAsFixed(2) ?? '0'} kWh'
-      ),
-      _buildPredictionRow(
-        'Peak Power',
-        '${aggregates['peak_power']?.toStringAsFixed(2) ?? '0'} kWh'
-      ),
-    ],
-  );
-}
-
-Widget _buildPredictionRow(String label, String value) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    ),
-  );
-}
   Widget _buildHeader(AppLocalizations s) {
     return SafeArea(
       child: Container(
@@ -574,15 +886,13 @@ Widget _buildPredictionRow(String label, String value) {
   }
 
   Widget _buildPeriodDropdown(AppLocalizations s) {
-    // Define both English and Indonesian options
     final periodOptions = {
       'Daily': 'Harian',
-      'Weekly': 'Mingguan', 
+      'Weekly': 'Mingguan',
       'Monthly': 'Bulanan',
       'Yearly': 'Tahunan'
     };
 
-    // Convert selectedPeriod to English if it's in Indonesian
     final currentValue = periodOptions.entries
         .firstWhere(
           (entry) => entry.value == selectedPeriod,
@@ -609,7 +919,7 @@ Widget _buildPredictionRow(String label, String value) {
             return DropdownMenuItem<String>(
               value: entry.key,
               child: Text(
-                entry.value, // Display Indonesian text
+                entry.value,
                 style: const TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w500,
@@ -620,7 +930,6 @@ Widget _buildPredictionRow(String label, String value) {
           onChanged: (String? newValue) {
             if (newValue != null) {
               setState(() {
-                // Store the Indonesian version
                 selectedPeriod = periodOptions[newValue]!;
               });
             }
@@ -629,7 +938,6 @@ Widget _buildPredictionRow(String label, String value) {
       ],
     );
   }
-
 
   Widget _buildDateTimeCard() {
     return Container(
@@ -774,89 +1082,75 @@ Widget _buildPredictionRow(String label, String value) {
             const SizedBox(height: 10),
             SizedBox(
               height: 250,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(show: true),
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final date = filteredData[value.toInt()]['date'];
-                          String label;
-                          switch (selectedPeriod) {
-                            case 'Daily':
-                              label = DateFormat('EEE').format(date);
-                              break;
-                            case 'Weekly':
-                              label = 'Week ${value.toInt() + 1}';
-                              break;
-                            case 'Monthly':
-                              label = DateFormat('MMM').format(date);
-                              break;
-                            case 'Yearly':
-                              label = DateFormat('yyyy').format(date);
-                              break;
-                            default:
-                              label = '';
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              label,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
-                            value.toInt().toString(),
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontFamily: 'Poppins',
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  borderData: FlBorderData(
-                    show: true,
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  minX: 0,
-                  maxX: filteredData.length.toDouble() - 1,
-                  minY: 0,
-                  maxY: _getMaxEnergyValue(filteredData) * 1.2,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: filteredData.asMap().entries.map((e) {
-                        return FlSpot(
-                          e.key.toDouble(),
-                          e.value['energy'].toDouble(),
-                        );
-                      }).toList(),
-                      isCurved: true,
-                      color: const Color(0xFF0A5099),
-                      barWidth: 3,
-                      belowBarData: BarAreaData(show: false),
-                      dotData: FlDotData(show: true),
-                    ),
-                  ],
+              child: SfCartesianChart(
+                tooltipBehavior: _tooltipBehavior,
+                primaryXAxis: CategoryAxis(),
+                primaryYAxis: NumericAxis(
+                  title: AxisTitle(text: 'Energy (kWh)'),
+                  numberFormat: NumberFormat.compact(),
                 ),
+                series: <CartesianSeries>[
+                  ColumnSeries<Map<String, dynamic>, String>(
+                    dataSource: filteredData,
+                    xValueMapper: (data, _) => _formatDate(data['date']),
+                    yValueMapper: (data, _) => data['energy'],
+                    name: 'Energy',
+                    color: const Color(0xFF0A5099),
+                    dataLabelSettings: const DataLabelSettings(
+                      isVisible: true,
+                      labelAlignment: ChartDataLabelAlignment.outer,
+                    ),
+                    markerSettings: const MarkerSettings(isVisible: true),
+                  )
+                ],
               ),
             ),
+            const SizedBox(height: 10),
+            if (_metrics.isNotEmpty) _buildUsageMetrics(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildUsageMetrics() {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    children: [
+      _buildMetricTile(
+        'Avg Daily',
+        '${(_metrics['avg_daily_power'] as num?)?.toStringAsFixed(2) ?? '0.00'} kW',
+      ),
+      _buildMetricTile(
+        'Peak Today',
+        '${(_metrics['peak_power_today'] as num?)?.toStringAsFixed(2) ?? '0.00'} kW',
+      ),
+      _buildMetricTile(
+        'Energy Today',
+        '${((_metrics['energy_today'] ?? 0) / 1000).toStringAsFixed(2)} kWh',
+      ),
+    ],
+  );
+}
+
+  Widget _buildMetricTile(String title, String value) {
+    return Column(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 
@@ -876,6 +1170,7 @@ Widget _buildPredictionRow(String label, String value) {
             color: Color(0xFF0A5099),
           ),
         ),
+        _buildPredictionSummary(),
         const SizedBox(height: 10),
         Card(
           elevation: 2,
@@ -932,7 +1227,8 @@ Widget _buildPredictionRow(String label, String value) {
                           ),
                         ),
                         Text(
-                          NumberFormat("#,###").format(entry['cost'].toInt()),
+                          // NumberFormat("#,###").format(entry['cost'].toInt()),
+                          "",
                           style: const TextStyle(
                             fontFamily: 'Poppins',
                           ),
@@ -955,38 +1251,25 @@ Widget _buildPredictionRow(String label, String value) {
 
     switch (selectedPeriod) {
       case 'Daily':
+        return _dailyConsumption.take(7).toList();
+      case 'Weekly':
         return history
             .where((entry) =>
                 entry['date'].isAfter(now.subtract(const Duration(days: 7))))
             .toList();
-      case 'Weekly':
-        return history
-            .where((entry) =>
-                entry['date'].isAfter(now.subtract(const Duration(days: 28))))
-            .toList()
-            .sublist(0, 4);
       case 'Monthly':
         return history
             .where((entry) =>
-                entry['date'].isAfter(now.subtract(const Duration(days: 180))))
-            .toList()
-            .sublist(0, 6);
+                entry['date'].isAfter(now.subtract(const Duration(days: 30))))
+            .toList();
       case 'Yearly':
         return history
             .where((entry) =>
-                entry['date'].isAfter(now.subtract(const Duration(days: 1095))))
-            .toList()
-            .sublist(0, 3);
+                entry['date'].isAfter(now.subtract(const Duration(days: 365))))
+            .toList();
       default:
-        return [];
+        return history.take(7).toList();
     }
-  }
-
-  double _getMaxEnergyValue(List<Map<String, dynamic>> data) {
-    if (data.isEmpty) return 100;
-    return data
-        .map((e) => e['energy'].toDouble())
-        .reduce((a, b) => a > b ? a : b);
   }
 
   String _formatDate(DateTime date) {

@@ -3,10 +3,10 @@ import 'package:ta_mobile/services/api_service.dart';
 class EnergyAnalyticsService {
   final ApiService _apiService = ApiService();
 
-  Future<Map<String, dynamic>> getDeviceData(String deviceId) async {
+  Future<Map<String, dynamic>> getDeviceData(int id) async {
     try {
       final response = await _apiService.get(
-        '/energy/device/$deviceId',
+        '/energy/device/$id',
       );
 
       if (response['success'] == true) {
@@ -25,10 +25,10 @@ class EnergyAnalyticsService {
     }
   }
 
-  Future<Map<String, dynamic>> getPredictionData(String deviceId) async {
+  Future<Map<String, dynamic>> getPredictionData(int id) async {
     try {
       final response = await _apiService.get(
-        '/energy/device/$deviceId/prediction',
+        '/energy/device/$id/prediction',
       );
 
       if (response['success'] == true) {
@@ -48,13 +48,13 @@ class EnergyAnalyticsService {
   }
 
   Future<Map<String, dynamic>> getConsumptionHistory(
-    String deviceId, {
+    int id, {
     String period = 'day',
     int days = 7,
   }) async {
     try {
       final response = await _apiService.get(
-        '/energy/device/$deviceId/consumption',
+        '/energy/device/$id/consumption',
         body: {
           'period': period,
           'days': days,

@@ -5,11 +5,13 @@ import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
 
 class ApiEndpoints {
   static const String url = 'https://pey.my.id';
+  // static const String url = 'http://192.168.1.5:8000';
   static const String baseUrl = '$url/api';
 
   static String get register => '/register';
   static String get login => '/login';
   static String get completeProfile => '/complete-profile';
+  static String get forgotPassword => '/forgot-password';
 }
 
 class ApiService {
@@ -24,6 +26,7 @@ class ApiService {
 
   String get baseUrl => ApiEndpoints.baseUrl;
   String get url => ApiEndpoints.url;
+  String get forgotPassword => ApiEndpoints.forgotPassword;
 
   void _initDio() {
     _dio = Dio(

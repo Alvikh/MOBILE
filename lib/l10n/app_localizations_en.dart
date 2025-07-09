@@ -131,16 +131,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completeAccountInfo => 'Complete\naccount information';
 
   @override
-  String get nameLabel => 'Name *';
+  String get nameLabel => 'Name';
 
   @override
-  String get phoneLabel => 'No. Hp *';
+  String get phoneLabel => 'No. Hp';
 
   @override
-  String get emailLabel => 'Email *';
+  String get emailLabel => 'Email';
 
   @override
-  String get addressLabel => 'Address *';
+  String get addressLabel => 'Address';
 
   @override
   String get signUp => 'Sign up';
@@ -187,7 +187,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signInTitle => 'Sign In';
 
   @override
-  String get passwordLabel => 'Password *';
+  String get passwordLabel => 'Password';
 
   @override
   String get signInButton => 'Sign in';
@@ -202,7 +202,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signUpTitle => 'Sign Up';
 
   @override
-  String get confirmPasswordLabel => 'Confirm Password *';
+  String get confirmPasswordLabel => 'Confirm Password';
 
   @override
   String get nextButton => 'Next';
@@ -519,4 +519,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeSignIn => 'Sign in';
+
+  @override
+  String get emailRequired => 'Email is required.';
+
+  @override
+  String get linkSentSuccess => 'Reset link has been sent to your email.';
+
+  @override
+  String get linkSentFailed => 'Failed to send reset link. Please try again later.';
 }

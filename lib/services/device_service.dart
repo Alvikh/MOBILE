@@ -77,7 +77,7 @@ class DeviceService {
       throw ApiException(
         message: response['message'] ?? 'Failed to create device',
         statusCode: response['statusCode'],
-      );
+      );  
     } on DioException catch (e) {
       throw ApiException(
         message: e.response?.data['message'] ?? 'Network error occurred',

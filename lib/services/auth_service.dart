@@ -84,16 +84,19 @@ class AuthService {
           "user": User.fromMap(userData),
         };
       } else {
-        // Handle error response with null checks
-        log("Login failed with response: $response");
-        log(ApiEndpoints.baseUrl + '/login');
-        final errorMessage =
-            (response['data'] ?? {})['message'] ?? "Login failed";
-        return {
-          "success": false,
-          "message": errorMessage,
-        };
-      }
+  log("Login failed with response: $response");
+  log(ApiEndpoints.baseUrl + '/login');
+
+  final errorMessage =
+      response['message'] ??
+      (response['data'] ?? {})['message'] ??
+      "Email atau password salah";
+
+  return {
+    "success": false,
+    "message": errorMessage,
+  };
+}
     } catch (e) {
       log("Error during sign in: $e");
       return {

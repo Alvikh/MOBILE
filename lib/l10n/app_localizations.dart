@@ -338,25 +338,25 @@ abstract class AppLocalizations {
   /// No description provided for @nameLabel.
   ///
   /// In en, this message translates to:
-  /// **'Name *'**
+  /// **'Name'**
   String get nameLabel;
 
   /// No description provided for @phoneLabel.
   ///
   /// In en, this message translates to:
-  /// **'No. Hp *'**
+  /// **'No. Hp'**
   String get phoneLabel;
 
   /// No description provided for @emailLabel.
   ///
   /// In en, this message translates to:
-  /// **'Email *'**
+  /// **'Email'**
   String get emailLabel;
 
   /// No description provided for @addressLabel.
   ///
   /// In en, this message translates to:
-  /// **'Address *'**
+  /// **'Address'**
   String get addressLabel;
 
   /// No description provided for @signUp.
@@ -446,7 +446,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordLabel.
   ///
   /// In en, this message translates to:
-  /// **'Password *'**
+  /// **'Password'**
   String get passwordLabel;
 
   /// No description provided for @signInButton.
@@ -476,7 +476,7 @@ abstract class AppLocalizations {
   /// No description provided for @confirmPasswordLabel.
   ///
   /// In en, this message translates to:
-  /// **'Confirm Password *'**
+  /// **'Confirm Password'**
   String get confirmPasswordLabel;
 
   /// No description provided for @nextButton.
@@ -1078,6 +1078,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in'**
   String get welcomeSignIn;
+
+  /// No description provided for @emailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required.'**
+  String get emailRequired;
+
+  /// No description provided for @linkSentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset link has been sent to your email.'**
+  String get linkSentSuccess;
+
+  /// No description provided for @linkSentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send reset link. Please try again later.'**
+  String get linkSentFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

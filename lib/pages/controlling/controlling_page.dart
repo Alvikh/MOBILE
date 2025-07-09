@@ -3,7 +3,6 @@ import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
-import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
 
 class ControllingPage extends StatefulWidget {
   const ControllingPage({Key? key}) : super(key: key);
@@ -141,7 +140,7 @@ class _ControllingPageState extends State<ControllingPage> {
                 ),
               ],
             ),
-            const CustomFloatingNavbar(selectedIndex: 2),
+            // const CustomFloatingNavbar(selectedIndex: 2),
           ],
         ),
       ),

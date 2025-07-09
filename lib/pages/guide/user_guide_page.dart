@@ -19,8 +19,8 @@ class UserGuidePage extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
+                      const SizedBox(height: 40),
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
                         width: double.infinity,
                         alignment: Alignment.center,
                         child: Image.asset(
@@ -89,18 +89,19 @@ class UserGuidePage extends StatelessWidget {
                           ),
                         ),
                       ),
+              SizedBox(height: 100,),
                     ],
                   ),
                 ),
               ),
             ],
           ),
-          const Positioned(
-            left: 20,
-            right: 20,
-            bottom: 20,
-            child: CustomFloatingNavbar(selectedIndex: 4),
-          ),
+          // const Positioned(
+          //   left: 20,
+          //   right: 20,
+          //   bottom: 20,
+          //   child: CustomFloatingNavbar(selectedIndex: 4),
+          // ),
         ],
       ),
     );

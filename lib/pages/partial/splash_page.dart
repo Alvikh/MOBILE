@@ -4,6 +4,7 @@ import 'package:ta_mobile/pages/home/home_page.dart';
 import 'package:ta_mobile/services/api_service.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
 import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
+import 'package:ta_mobile/widgets/costum_loading_screen.dart';
 
 import 'welcome_page.dart';
 
@@ -120,7 +121,7 @@ class _SplashPageState extends State<SplashPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(child: CircularProgressIndicator()),
+      body: Center(child: CustomLoadingScreen()),
     );
   }
 }

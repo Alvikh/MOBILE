@@ -519,4 +519,13 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get welcomeSignIn => 'Masuk';
+
+  @override
+  String get emailRequired => 'Email wajib diisi.';
+
+  @override
+  String get linkSentSuccess => 'Tautan reset berhasil dikirim ke email kamu.';
+
+  @override
+  String get linkSentFailed => 'Gagal mengirim tautan reset. Coba lagi nanti.';
 }

@@ -9,7 +9,6 @@ import 'package:ta_mobile/pages/auth/sign_in_page.dart';
 import 'package:ta_mobile/services/account_service.dart';
 import 'package:ta_mobile/services/api_service.dart';
 import 'package:ta_mobile/services/auth_service.dart';
-import 'package:ta_mobile/widgets/custom_floating_navbar.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({Key? key}) : super(key: key);
@@ -240,7 +239,7 @@ class _AccountPageState extends State<AccountPage> {
               ],
             ),
           ),
-          const CustomFloatingNavbar(selectedIndex: 3),
+          // const CustomFloatingNavbar(selectedIndex: 3),
         ],
       ),
     );

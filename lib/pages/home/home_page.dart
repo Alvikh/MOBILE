@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ta_mobile/l10n/app_localizations.dart';
+import 'package:ta_mobile/main_wrapper.dart';
 import 'package:ta_mobile/models/user.dart';
-import 'package:ta_mobile/pages/account/account_page.dart';
-import 'package:ta_mobile/pages/controlling/controlling_page.dart';
-import 'package:ta_mobile/pages/guide/user_guide_page.dart';
-import 'package:ta_mobile/pages/monitoring/monitoring_page.dart';
 import 'package:ta_mobile/widgets/custom_header.dart';
 
 class HomePage extends StatelessWidget {
@@ -78,7 +75,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => MonitoringPage()),
+                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 0,)),
                     );
                   },
                 ),
@@ -88,7 +85,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ControllingPage()),
+                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 1,)),
                     );
                   },
                 ),
@@ -98,7 +95,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => AccountPage()),
+                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 2,)),
                     );
                   },
                 ),
@@ -108,7 +105,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => UserGuidePage()),
+                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 3,)),
                     );
                   },
                 ),
