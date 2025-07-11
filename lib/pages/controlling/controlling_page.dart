@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/models/user.dart';
+import 'package:ta_mobile/pages/device/add_device_page.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
 
 class ControllingPage extends StatefulWidget {
@@ -11,9 +12,11 @@ class ControllingPage extends StatefulWidget {
   State<ControllingPage> createState() => _ControllingPageState();
 }
 
-class _ControllingPageState extends State<ControllingPage> {
+class _ControllingPageState extends State<ControllingPage> with SingleTickerProviderStateMixin {
   late MqttService mqttService;
   late List<Device> devices;
+  late AnimationController _animationController;
+  late Animation<double> _headerAnimation;
 
   @override
   void initState() {
@@ -26,10 +29,28 @@ class _ControllingPageState extends State<ControllingPage> {
         .devices
         .where((device) => device.type.toLowerCase() == 'control')
         .toList();
+    
+    // Tambahkan animation controller
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    
+    _headerAnimation = Tween<double>(begin: -100, end: -10).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutBack,
+      ),
+    );
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _animationController.forward();
+    });
   }
 
   @override
   void dispose() {
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -148,9 +169,17 @@ class _ControllingPageState extends State<ControllingPage> {
   }
 
   Widget _buildHeader(BuildContext context, int activeDevices) {
-    final s = AppLocalizations.of(context)!;
-    
-    return Container(
+  final s = AppLocalizations.of(context)!;
+  
+  return AnimatedBuilder(
+    animation: _headerAnimation,
+    builder: (context, child) {
+      return Transform.translate(
+        offset: Offset(0, _headerAnimation.value),
+        child: child,
+      );
+    },
+    child: Container(
       padding: const EdgeInsets.fromLTRB(25, 40, 25, 30),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -183,30 +212,23 @@ class _ControllingPageState extends State<ControllingPage> {
                   fontFamily: 'Poppins',
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.power_settings_new,
-                        size: 16, color: Colors.white.withOpacity(0.9)),
-                    const SizedBox(width: 6),
-                    Text(
-                      s.statusActive.replaceFirst('{count}', activeDevices.toString()),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withOpacity(0.9),
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              ElevatedButton(
+  style: ElevatedButton.styleFrom(
+    fixedSize: const Size(50, 50),
+    shape: const CircleBorder(),
+    padding: const EdgeInsets.all(0),
+    backgroundColor: const Color(0xFF2196F3),
+    shadowColor: Colors.transparent,
+    elevation: 2,
+  ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddDevicePage()),
+    );
+  },
+  child: const Icon(Icons.add, color: Colors.white, size: 24),
+),
             ],
           ),
           const SizedBox(height: 10),
@@ -220,8 +242,9 @@ class _ControllingPageState extends State<ControllingPage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildDeviceGrid(BuildContext context) {
     final s = AppLocalizations.of(context)!;

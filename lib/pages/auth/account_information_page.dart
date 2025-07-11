@@ -16,7 +16,6 @@ class AccountInformationPage extends StatelessWidget {
     final result = await AccountService.updateProfile(
       name: nameController.text,
       phone: phoneController.text,
-      email: emailController.text,
       address: addressController.text,
     );
 
@@ -84,11 +83,11 @@ class AccountInformationPage extends StatelessWidget {
                     keyboardType: TextInputType.phone,
                   ),
                   SizedBox(height: 20),
-                  CustomTextField(
-                    label: "Email *",
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
+                  // CustomTextField(
+                  //   label: "Email *",
+                  //   controller: emailController,
+                  //   keyboardType: TextInputType.emailAddress,
+                  // ),
                   SizedBox(height: 20),
                   CustomTextField(
                     label: "Address *",

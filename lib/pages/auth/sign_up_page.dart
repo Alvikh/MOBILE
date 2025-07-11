@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:ta_mobile/services/auth_service.dart';
 import 'package:ta_mobile/widgets/custom_bottom_container.dart';
 import 'package:ta_mobile/widgets/custom_elevated_button.dart';
-import 'package:ta_mobile/widgets/custom_text_field.dart';
 import 'package:ta_mobile/widgets/custom_header.dart';
+import 'package:ta_mobile/widgets/custom_text_field.dart';
+
+import '../partial/welcome_page.dart';
 import 'account_information_page.dart';
 import 'sign_in_page.dart';
-import '../partial/welcome_page.dart';
 
 class SignUpPage extends StatelessWidget {
   SignUpPage({Key? key}) : super(key: key);

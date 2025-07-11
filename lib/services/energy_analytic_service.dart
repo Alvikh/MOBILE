@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:ta_mobile/services/api_service.dart';
 
 class EnergyAnalyticsService {
@@ -100,6 +101,56 @@ class EnergyAnalyticsService {
       }
     } catch (e) {
       rethrow;
+    }
+  }
+  Future<Map<String, dynamic>> getDataHistory(
+    String deviceId, {
+    DateTime? startDate,
+    DateTime? endDate,
+    String? interval,
+  }) async {
+    try {
+      // Build query parameters
+      final Map<String, dynamic> queryParams = {};
+      
+      if (startDate != null) {
+        queryParams['start_date'] = startDate.toIso8601String();
+      }
+      
+      if (endDate != null) {
+        queryParams['end_date'] = endDate.toIso8601String();
+      }
+      
+      if (interval != null) {
+        queryParams['interval'] = interval;
+      }
+
+      // Make the API request
+      final response = await _apiService.get(
+        '/device/$deviceId/consumption',
+        body: queryParams,
+      );
+
+      if (response['success'] == true) {
+        return {
+          'success': true,
+          'data': response['data'],
+        };
+      } else {
+        throw ApiException(
+          message: response['message'] ?? 'Failed to fetch consumption data',
+          statusCode: response['statusCode'],
+        );
+      }
+    } on DioException catch (e) {
+      throw ApiException(
+        message: e.response?.data['message'] ?? 'Network error occurred',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      throw ApiException(
+        message: 'Unexpected error: $e',
+      );
     }
   }
 }

@@ -1,11 +1,51 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/main_wrapper.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/widgets/custom_header.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String _displayText = "";
+  String _fullText = "";
+  int _textIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start typing animation after a short delay
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _fullText = AppLocalizations.of(context)!.homeIntroText;
+          _startTypingAnimation();
+        });
+      }
+    });
+  }
+
+  void _startTypingAnimation() {
+    const typingSpeed = Duration(milliseconds: 30);
+    
+    Timer.periodic(typingSpeed, (timer) {
+      if (_textIndex < _fullText.length) {
+        setState(() {
+          _displayText = _fullText.substring(0, _textIndex + 1);
+          _textIndex++;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,20 +78,25 @@ class HomePage extends StatelessWidget {
             textColor: Color(0xFF085085),
           ),
 
-          // Centered Text with top padding
+          // Animated Typing Text (no background container)
           Positioned(
             top: 200,
             left: 50,
-            right: 40,
+            right: 50,
             child: Center(
-              child: Text(
-                s.homeIntroText,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              child: AnimatedSwitcher(
+                duration: Duration(milliseconds: 100),
+                child: Text(
+                  _displayText,
+                  key: ValueKey<String>(_displayText),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ),
@@ -75,7 +120,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 0,)),
+                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 0)),
                     );
                   },
                 ),
@@ -85,7 +130,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 1,)),
+                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 1)),
                     );
                   },
                 ),
@@ -95,7 +140,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 2,)),
+                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 2)),
                     );
                   },
                 ),
@@ -105,7 +150,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 3,)),
+                      MaterialPageRoute(builder: (context) => MainWrapper(initialIndex: 3)),
                     );
                   },
                 ),

@@ -348,4 +348,13 @@ class User {
   String toString() {
     return 'User(id: $id, name: $name, email: $email, role: $role, devices: ${devices.length})';
   }
+  void addDevice(Device newDevice) {
+  final existingIndex = devices.indexWhere((d) => d.id == newDevice.id);
+  
+  if (existingIndex >= 0) {
+    devices[existingIndex] = newDevice;
+  } else {
+    devices.add(newDevice);
+  }
+}
 }

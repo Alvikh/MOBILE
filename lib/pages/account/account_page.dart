@@ -17,9 +17,37 @@ class AccountPage extends StatefulWidget {
   State<AccountPage> createState() => _AccountPageState();
 }
 
-class _AccountPageState extends State<AccountPage> {
+class _AccountPageState extends State<AccountPage> with SingleTickerProviderStateMixin {
   File? _selectedImage;
   bool _isUploading = false;
+  late AnimationController _animationController;
+  late Animation<double> _headerAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    
+    _headerAnimation = Tween<double>(begin: -120, end: -10).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutBack,
+      ),
+    );
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _animationController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -47,7 +75,6 @@ class _AccountPageState extends State<AccountPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result['message'] ?? 'Profile photo updated')),
         );
-        // Refresh user data
         await _refreshProfile();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -84,130 +111,138 @@ class _AccountPageState extends State<AccountPage> {
           SingleChildScrollView(
             child: Column(
               children: [
-                // Header Profile
-                Container(
-                  height: 220,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        const Color(0xFF0A5099),
-                        const Color(0xFF2196F3),
-                      ],
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0A5099).withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            GestureDetector(
-                              onTap: _pickImage,
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.white,
-                                child: _isUploading
-                                    ? const CircularProgressIndicator()
-                                    : _selectedImage != null
-                                        ? ClipOval(
-                                            child: Image.file(
-                                              _selectedImage!,
-                                              width: 95,
-                                              height: 95,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          )
-                                        : User().profilePhotoPath != null
-                                            ? ClipOval(
-                                                child: Image.network(
-                                                  "${ApiService().url}storage/${User().profilePhotoPath.toString()}",
-                                                  width: 95,
-                                                  height: 95,
-                                                  fit: BoxFit.cover,
-                                                  loadingBuilder: (BuildContext context, Widget child,
-                                                      ImageChunkEvent? loadingProgress) {
-                                                    if (loadingProgress == null) return child;
-                                                    return Center(
-                                                      child: CircularProgressIndicator(
-                                                        value: loadingProgress.expectedTotalBytes != null
-                                                            ? loadingProgress.cumulativeBytesLoaded /
-                                                                loadingProgress.expectedTotalBytes!
-                                                            : null,
-                                                      ),
-                                                    );
-                                                  },
-                                                  errorBuilder: (context, error, stackTrace) {
-                                                    return Icon(
-                                                      Icons.person,
-                                                      size: 50,
-                                                      color: Colors.grey[600],
-                                                    );
-                                                  },
-                                                ),
-                                              )
-                                            : Icon(
-                                                Icons.person,
-                                                size: 50,
-                                                color: Colors.grey[600],
-                                              ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: _pickImage,
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.edit,
-                                  size: 18,
-                                  color: Color(0xFF0A5099),
-                                ),
-                              ),
+                // Animated Header
+                AnimatedBuilder(
+                  animation: _headerAnimation,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(0, _headerAnimation.value),
+                      child: Container(
+                        height: 220,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              const Color(0xFF0A5099),
+                              const Color(0xFF2196F3),
+                            ],
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(30),
+                            bottomRight: Radius.circular(30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0A5099).withOpacity(0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 15),
-                        Text(
-                          User().name ?? s.nameLabel,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Stack(
+                                alignment: Alignment.bottomRight,
+                                children: [
+                                  GestureDetector(
+                                    onTap: _pickImage,
+                                    child: CircleAvatar(
+                                      radius: 50,
+                                      backgroundColor: Colors.white,
+                                      child: _isUploading
+                                          ? const CircularProgressIndicator()
+                                          : _selectedImage != null
+                                              ? ClipOval(
+                                                  child: Image.file(
+                                                    _selectedImage!,
+                                                    width: 95,
+                                                    height: 95,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                )
+                                              : User().profilePhotoPath != null
+                                                  ? ClipOval(
+                                                      child: Image.network(
+                                                        "${ApiService().url}${User().profilePhotoPath.toString()}",
+                                                        width: 95,
+                                                        height: 95,
+                                                        fit: BoxFit.cover,
+                                                        loadingBuilder: (BuildContext context, Widget child,
+                                                            ImageChunkEvent? loadingProgress) {
+                                                          if (loadingProgress == null) return child;
+                                                          return Center(
+                                                            child: CircularProgressIndicator(
+                                                              value: loadingProgress.expectedTotalBytes != null
+                                                                  ? loadingProgress.cumulativeBytesLoaded /
+                                                                      loadingProgress.expectedTotalBytes!
+                                                                  : null,
+                                                            ),
+                                                          );
+                                                        },
+                                                        errorBuilder: (context, error, stackTrace) {
+                                                          return Icon(
+                                                            Icons.person,
+                                                            size: 50,
+                                                            color: Colors.grey[600],
+                                                          );
+                                                        },
+                                                      ),
+                                                    )
+                                                  : Icon(
+                                                      Icons.person,
+                                                      size: 50,
+                                                      color: Colors.grey[600],
+                                                    ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: _pickImage,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(5),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.edit,
+                                        size: 18,
+                                        color: Color(0xFF0A5099),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 15),
+                              Text(
+                                User().name ?? s.nameLabel,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                User().email ?? s.email,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontFamily: 'Poppins',
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 5),
-                        Text(
-                          User().email ?? s.email,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontFamily: 'Poppins',
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 ),
 
-                // Rest of your existing widgets...
+                // Rest of the content remains the same
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -239,12 +274,10 @@ class _AccountPageState extends State<AccountPage> {
               ],
             ),
           ),
-          // const CustomFloatingNavbar(selectedIndex: 3),
         ],
       ),
     );
   }
-
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),

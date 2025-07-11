@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 class CustomHeader extends StatelessWidget {
   final String title;
   final Color backgroundColor;
-  final Color textColor;
+  final Color textColor; // Masih dipakai untuk ikon "Back"
   final VoidCallback? onBack;
-  final double height; // Added height parameter
+  final double height;
 
   const CustomHeader({
     Key? key,
@@ -13,15 +13,15 @@ class CustomHeader extends StatelessWidget {
     this.backgroundColor = const Color(0xFF1AB9BF),
     this.textColor = Colors.white,
     this.onBack,
-    this.height = 180, // Default height that fits your design
+    this.height = 180,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: height, // Constrain the Stack with explicit height
+      height: height,
       child: Stack(
-        clipBehavior: Clip.none, // Allows elements to overflow visually
+        clipBehavior: Clip.none,
         children: [
           // Background Circle
           Positioned(
@@ -57,17 +57,33 @@ class CustomHeader extends StatelessWidget {
               ),
             ),
 
-          // Page Title
+          // Page Title with gradient text
           Positioned(
             top: 70,
             left: 30,
-            child: Text(
-              title,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 30,
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.bold, // Added for better visibility
+            child: ShaderMask(
+              shaderCallback: (bounds) {
+                return const LinearGradient(
+                  colors: [
+                    Color(0xFF085085), // Dark blue (kiri)
+                    Color(0xFF085085), // Dark blue (kiri)
+                    Color(0xFF085085), // Dark blue (kiri)
+                    Color.fromARGB(255, 170, 217, 251), // Light blue (kanan)
+                    Color.fromARGB(255, 170, 217, 251), // Light blue (kanan)
+                    Color.fromARGB(255, 170, 217, 251), // Light blue (kanan)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.centerRight,
+                ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height));
+              },
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white, // Masih dibutuhkan oleh ShaderMask
+                ),
               ),
             ),
           ),

@@ -4,8 +4,8 @@ import 'package:ta_mobile/routes.dart';
 import 'package:ta_mobile/services/preferences/user_preferences_service.dart';
 
 class ApiEndpoints {
-  static const String url = 'https://pey.my.id';
-  // static const String url = 'http://192.168.1.5:8000';
+  // static const String url = 'https://pey.my.id';
+  static const String url = 'http://192.168.1.5:8000';
   static const String baseUrl = '$url/api';
 
   static String get register => '/register';
@@ -74,23 +74,42 @@ class ApiService {
   }
 
   Future<Response> _refreshToken() async {
-    final refreshToken = await UserPreferencesService().getRefreshToken();
-    if (refreshToken == null) throw Exception('No refresh token available');
+    try {
+      final refreshToken = await UserPreferencesService().getRefreshToken();
+      if (refreshToken == null) {
+        await _clearAllTokens();
+        throw ApiException(message: 'Session expired. Please login again.');
+      }
 
-    final response = await _dio.post(
-      '/refresh',
-      data: {'refresh_token': refreshToken},
-    );
-
-    if (response.data['success'] == true) {
-      await UserPreferencesService().saveTokens(
-        authToken: response.data['token'],
-        refreshToken: response.data['refresh_token'],
+      final response = await _dio.post(
+        '/refresh',
+        data: {'refresh_token': refreshToken},
+        options: Options(headers: {'Authorization': null}), // No auth header for refresh
       );
-      await setToken(response.data['token']);
-    }
 
-    return response;
+      if (response.data['success'] == true) {
+        await UserPreferencesService().saveTokens(
+          authToken: response.data['token'],
+          refreshToken: response.data['refresh_token'] ?? refreshToken,
+        );
+        await setToken(response.data['token']);
+        return response;
+      } else {
+        await _clearAllTokens();
+        throw ApiException(message: 'Token refresh failed');
+      }
+    } catch (e) {
+      await _clearAllTokens();
+      throw ApiException(message: 'Token refresh failed: ${e.toString()}');
+    }
+  }
+
+  Future<void> _clearAllTokens() async {
+    _token = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await UserPreferencesService().clearUserData();
+    _updateDioHeaders();
   }
 
   void _addInterceptors() {
@@ -107,14 +126,28 @@ class ApiService {
       },
       onError: (error, handler) async {
         print('Error: ${error.response?.statusCode} ${error.message}');
+        print('Error Data: ${error.response?.data}');
+        
         if (error.response?.statusCode == 401) {
+          // Skip token refresh for login/refresh endpoints
+          if (error.requestOptions.path == '/login' || 
+              error.requestOptions.path == '/refresh') {
+            await _clearAllTokens();
+            navigatorKey.currentState?.pushReplacementNamed(AppRoutes.login);
+            return handler.reject(error);
+          }
+
           try {
+            // Attempt token refresh
             await _refreshToken();
+            
+            // Retry original request with new token
             final request = error.requestOptions;
             final opts = Options(
               method: request.method,
               headers: request.headers,
             );
+            
             final response = await _dio.request(
               request.path,
               options: opts,
@@ -122,8 +155,9 @@ class ApiService {
               queryParameters: request.queryParameters,
             );
             return handler.resolve(response);
-          } catch (e) {
-            await UserPreferencesService().clearUserData();
+          } catch (refreshError) {
+            // If refresh fails, clear tokens and redirect to login
+            await _clearAllTokens();
             navigatorKey.currentState?.pushReplacementNamed(AppRoutes.login);
             return handler.reject(error);
           }

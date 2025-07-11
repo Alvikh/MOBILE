@@ -65,15 +65,16 @@ class DeviceService {
         'status': status,
         'user_id': User().id,
       });
-
+// print(response['data']['data']);
       if (response['success'] == true && response['data'] != null) {
-        final newDevice = Device.fromJson(response['data']);
+  final newDevice = Device.fromJson(response['data']['data']);
+  
+  // User().addDevice(newDevice);
+  
+  ref.read(userProvider.notifier).addDevice(newDevice);
 
-        // Add device to user's devices in state
-        ref.read(userProvider.notifier).addDevice(newDevice);
-
-        return newDevice;
-      }
+  return newDevice;
+}
       throw ApiException(
         message: response['message'] ?? 'Failed to create device',
         statusCode: response['statusCode'],

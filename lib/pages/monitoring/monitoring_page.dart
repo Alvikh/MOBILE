@@ -8,6 +8,7 @@ import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/pages/device/add_device_page.dart';
+import 'package:ta_mobile/pages/partial/sensor_history_page.dart';
 import 'package:ta_mobile/services/energy_analytic_service.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
 
@@ -106,92 +107,97 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
         }
       },
     );
+    if (!mqttService.isConnected) {
+      mqttService.connect();
+    }
   }
 
   Future<void> _fetchInitialData() async {
-  if (monitoringDevices.isEmpty) return;
+    if (monitoringDevices.isEmpty) return;
 
-  setState(() {
-    _isLoading = true;
-    _errorMessage = '';
-  });
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
-  try {
-    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
-    final id = monitoringDevices[currentDeviceIndex].id;
+    try {
+      final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+      final id = monitoringDevices[currentDeviceIndex].id;
 
-    // Cek apakah data sudah ada di provider
-    final existingData = ref.read(deviceDataProvider);
+      // Cek apakah data sudah ada di provider
+      final existingData = ref.read(deviceDataProvider);
 
-    Map<String, dynamic> results;
+      Map<String, dynamic> results;
 
-    if (existingData.isNotEmpty) {
-      print("✅ Menggunakan data dari provider");
-      results = existingData; // gunakan dari provider
-    } else {
-      print("🔄 Fetch dari API karena provider kosong");
-      results = await _energyAnalyticsService.getDeviceData(id!);
-      ref.read(deviceDataProvider.notifier).updateDeviceData(results);
+      if (existingData.isNotEmpty) {
+        print("✅ Menggunakan data dari provider");
+        results = existingData; // gunakan dari provider
+      } else {
+        print("🔄 Fetch dari API karena provider kosong");
+        results = await _energyAnalyticsService.getDeviceData(id!);
+        ref.read(deviceDataProvider.notifier).updateDeviceData(results);
+      }
+
+      // Proses data ke UI
+      setState(() {
+        print("API Response: $results");
+
+        _deviceData = results['data']['device'];
+        _consumptionHistory = results['data']['consumption'];
+        _predictionData = results['data']['prediction'] ?? {};
+        _energyHistory = results['data']['energy_history'] ?? {};
+        _metrics = results['data']['metrics'] ?? {};
+
+        print("record isss $_predictionData");
+
+        // Process energy history
+        if (_energyHistory['records'] != null) {
+          energyHistory[deviceId] = List<Map<String, dynamic>>.from(
+            (_energyHistory['records'] as List).map((record) {
+              final recordMap = record as Map<String, dynamic>;
+              final energyVal =
+                  double.tryParse(recordMap['energy'].toString()) ?? 0.0;
+              final avgPowerVal =
+                  double.tryParse(recordMap['avg_power'].toString()) ?? 0.0;
+
+              return {
+                'date': DateTime.tryParse(recordMap['date']) ?? DateTime.now(),
+                'energy': energyVal / 1000,
+                'cost': energyVal * 1444.70 / 1000,
+                'duration': recordMap['duration'],
+                'avg_power': avgPowerVal,
+              };
+            }).toList(),
+          );
+        }
+
+        // Process daily consumption
+        if (_consumptionHistory['daily'] != null) {
+          final daily = _consumptionHistory['daily'];
+          final dailyLabels = daily['labels'] as List<dynamic>;
+          final dailyData = daily['data'] as List<dynamic>;
+
+          _dailyConsumption = List<Map<String, dynamic>>.generate(
+            dailyLabels.length,
+            (index) => {
+              'date': _parseCustomDate(dailyLabels[index].toString()),
+              'energy':
+                  dailyData[index] is num ? dailyData[index].toDouble() : 0.0,
+            },
+          );
+        }
+      });
+    } catch (e) {
+      print('❌ Failed to load data: $e');
+      setState(() {
+        _errorMessage = 'Failed to load data: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
-
-    // Proses data ke UI
-    setState(() {
-      print("API Response: $results");
-
-      _deviceData = results['data']['device'];
-      _consumptionHistory = results['data']['consumption'];
-      _predictionData = results['data']['prediction'] ?? {};
-      _energyHistory = results['data']['energy_history'] ?? {};
-      _metrics = results['data']['metrics'] ?? {};
-
-      print("record isss $_predictionData");
-
-      // Process energy history
-      if (_energyHistory['records'] != null) {
-        energyHistory[deviceId] = List<Map<String, dynamic>>.from(
-          (_energyHistory['records'] as List).map((record) {
-            final recordMap = record as Map<String, dynamic>;
-            final energyVal = double.tryParse(recordMap['energy'].toString()) ?? 0.0;
-            final avgPowerVal = double.tryParse(recordMap['avg_power'].toString()) ?? 0.0;
-
-            return {
-              'date': DateTime.tryParse(recordMap['date']) ?? DateTime.now(),
-              'energy': energyVal / 1000,
-              'cost': energyVal * 1444.70 / 1000,
-              'duration': recordMap['duration'],
-              'avg_power': avgPowerVal,
-            };
-          }).toList(),
-        );
-      }
-
-      // Process daily consumption
-      if (_consumptionHistory['daily'] != null) {
-        final daily = _consumptionHistory['daily'];
-        final dailyLabels = daily['labels'] as List<dynamic>;
-        final dailyData = daily['data'] as List<dynamic>;
-
-        _dailyConsumption = List<Map<String, dynamic>>.generate(
-          dailyLabels.length,
-          (index) => {
-            'date': _parseCustomDate(dailyLabels[index].toString()),
-            'energy': dailyData[index] is num ? dailyData[index].toDouble() : 0.0,
-          },
-        );
-      }
-    });
-  } catch (e) {
-    print('❌ Failed to load data: $e');
-    setState(() {
-      _errorMessage = 'Failed to load data: $e';
-    });
-  } finally {
-    setState(() {
-      _isLoading = false;
-    });
   }
-}
-
 
   int _getMonthNumber(String monthAbbr) {
     const months = {
@@ -301,7 +307,7 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
 
   @override
   void dispose() {
-    mqttService.disconnect();
+    // mqttService.disconnect();
     super.dispose();
   }
 
@@ -692,86 +698,96 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
     );
   }
 
-  @override
   Widget build(BuildContext context) {
-    final s = AppLocalizations.of(context)!;
-    final bool hasMonitoringDevice = monitoringDevices.isNotEmpty;
-final deviceData = ref.watch(deviceDataProvider);
-  print("Current state in UI: $deviceData");
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A5099),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 80),
-                  child: Stack(
-                    children: [
-                      Column(
-                        children: [
-                          _buildHeader(s),
-                          Container(
-                            margin: const EdgeInsets.all(10),
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: hasMonitoringDevice
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      _buildDeviceSwitcher(context),
-                                      if (_isLoading)
-                                        const Center(
-                                            child: CircularProgressIndicator()),
-                                      if (_errorMessage.isNotEmpty)
-                                        Text(
-                                          _errorMessage,
-                                          style: const TextStyle(
-                                              color: Colors.red),
-                                        ),
-                                      const SizedBox(height: 15),
-                                      Text(
-                                        s.monitorLiveTitle,
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontFamily: 'Poppins',
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 15),
-                                      _buildDateTimeCard(),
-                                      const SizedBox(height: 15),
-                                      _buildLiveDataScroll(),
-                                      const SizedBox(height: 20),
-                                      _buildPeriodDropdown(s),
-                                      const SizedBox(height: 20),
-                                      _buildEnergyUsageChart(),
-                                      const SizedBox(height: 20),
-                                      _buildEnergyHistorySection(s),
-                                      const SizedBox(height: 20),
-                                      _buildPredictionSection(),
-                                    ],
-                                  )
-                                : _buildNoDeviceCard(s),
+  final s = AppLocalizations.of(context)!;
+  final bool hasMonitoringDevice = monitoringDevices.isNotEmpty;
+  
+  return Scaffold(
+    backgroundColor: const Color(0xFF0A5099),
+    body: Stack(
+      children: [
+        Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 80),
+                child: Stack(
+                  children: [
+                    Column(
+                      children: [
+                        _buildHeader(s),
+                        Container(
+                          margin: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                        ],
+                          child: hasMonitoringDevice
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildDeviceSwitcher(context),
+                                    if (_isLoading)
+                                      const Center(child: CircularProgressIndicator()),
+                                    if (_errorMessage.isNotEmpty)
+                                      Text(_errorMessage, style: const TextStyle(color: Colors.red)),
+                                    const SizedBox(height: 15),
+                                    Text(
+                                      s.monitorLiveTitle,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 15),
+                                    _buildDateTimeCard(),
+                                    const SizedBox(height: 160), 
+                                    // _buildPeriodDropdown(s),
+                                    const SizedBox(height: 20),
+                                    _buildEnergyUsageChart(),
+                                    const SizedBox(height: 20),
+                                    _buildEnergyHistorySection(s),
+                                    const SizedBox(height: 20),
+                                    _buildPredictionSection(),
+                                  ],
+                                )
+                              : _buildNoDeviceCard(s),
+                        ),
+                      ],
+                    ),
+                    if(hasMonitoringDevice)
+                   (monitoringDevices.length<=1)?
+                      Positioned(
+                        top: 400,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          // Hilangkan margin horizontal untuk full width
+                          height: 130, // Sesuaikan dengan tinggi _buildLiveDataScroll()
+                          child: _buildLiveDataScroll(), // Fungsi baru untuk full width
+                        ),
+                      ):Positioned(
+                        top: 490, 
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          // Hilangkan margin horizontal untuk full width
+                          height: 130, // Sesuaikan dengan tinggi _buildLiveDataScroll()
+                          child: _buildLiveDataScroll(), // Fungsi baru untuk full width
+                        ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          // const CustomFloatingNavbar(selectedIndex: 1),
-        ],
-      ),
-    );
-  }
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildHeader(AppLocalizations s) {
     return SafeArea(
@@ -796,7 +812,13 @@ final deviceData = ref.watch(deviceDataProvider);
                   ),
                   const SizedBox(height: 10),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                       Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const SensorHistoryPage()),
+                );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2196F3),
                       shape: RoundedRectangleBorder(
@@ -941,23 +963,24 @@ final deviceData = ref.watch(deviceDataProvider);
 
   Widget _buildDateTimeCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
+        color: const Color(0xFFF9FAFB), // putih pucat modern
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          const Icon(Icons.calendar_today, size: 20, color: Color(0xFF0A5099)),
-          const SizedBox(width: 10),
+          const Icon(Icons.calendar_today_rounded,
+              size: 20, color: Color(0xFF0A5099)),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               '$tanggal : $waktu WIB',
@@ -965,7 +988,7 @@ final deviceData = ref.watch(deviceDataProvider);
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 fontFamily: 'Poppins',
-                color: Colors.black87,
+                color: Color(0xFF1F2937), // dark gray modern
               ),
             ),
           ),
@@ -1003,35 +1026,43 @@ final deviceData = ref.watch(deviceDataProvider);
     ];
 
     return Container(
-      height: 120,
+      height: 135,
       margin: const EdgeInsets.symmetric(vertical: 10),
       child: ListView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.zero,
         children: [
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
           ...dataList.map((item) {
             return Container(
-              width: 120,
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.all(10),
+              width: 125,
+              height: 125,
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F4F9),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade300),
+                color: const Color(0xFFF9FAFB), // putih pucat modern
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+                border: Border.all(color: Colors.grey.shade200),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(item['icon'] as IconData,
-                      size: 28, color: const Color(0xFF0A5099)),
-                  const SizedBox(height: 6),
+                      size: 30, color: const Color(0xFF0A5099)),
+                  const SizedBox(height: 8),
                   Text(
                     item['label'].toString(),
                     style: const TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                       fontFamily: 'Poppins',
                       color: Color(0xFF0A5099),
                     ),
@@ -1041,8 +1072,9 @@ final deviceData = ref.watch(deviceDataProvider);
                     item['value'].toString(),
                     style: const TextStyle(
                       fontSize: 13,
+                      fontWeight: FontWeight.w500,
                       fontFamily: 'Poppins',
-                      color: Colors.black87,
+                      color: Color(0xFF1F2937),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -1114,24 +1146,24 @@ final deviceData = ref.watch(deviceDataProvider);
   }
 
   Widget _buildUsageMetrics() {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    children: [
-      _buildMetricTile(
-        'Avg Daily',
-        '${(_metrics['avg_daily_power'] as num?)?.toStringAsFixed(2) ?? '0.00'} kW',
-      ),
-      _buildMetricTile(
-        'Peak Today',
-        '${(_metrics['peak_power_today'] as num?)?.toStringAsFixed(2) ?? '0.00'} kW',
-      ),
-      _buildMetricTile(
-        'Energy Today',
-        '${((_metrics['energy_today'] ?? 0) / 1000).toStringAsFixed(2)} kWh',
-      ),
-    ],
-  );
-}
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildMetricTile(
+          'Avg Daily',
+          '${(_metrics['avg_daily_power'] as num?)?.toStringAsFixed(2) ?? '0.00'} kW',
+        ),
+        _buildMetricTile(
+          'Peak Today',
+          '${(_metrics['peak_power_today'] as num?)?.toStringAsFixed(2) ?? '0.00'} kW',
+        ),
+        _buildMetricTile(
+          'Energy Today',
+          '${((_metrics['energy_today'] ?? 0) / 1000).toStringAsFixed(2)} kWh',
+        ),
+      ],
+    );
+  }
 
   Widget _buildMetricTile(String title, String value) {
     return Column(
@@ -1170,7 +1202,7 @@ final deviceData = ref.watch(deviceDataProvider);
             color: Color(0xFF0A5099),
           ),
         ),
-        _buildPredictionSummary(),
+        // _buildPredictionSummary(),
         const SizedBox(height: 10),
         Card(
           elevation: 2,

@@ -1,7 +1,34 @@
 import 'package:flutter/material.dart';
 
-class CustomLoadingScreen extends StatelessWidget {
+class CustomLoadingScreen extends StatefulWidget {
   const CustomLoadingScreen({Key? key}) : super(key: key);
+
+  @override
+  State<CustomLoadingScreen> createState() => _CustomLoadingScreenState();
+}
+
+class _CustomLoadingScreenState extends State<CustomLoadingScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    )..repeat(reverse: true);
+
+    _opacity = Tween<double>(begin: 1.0, end: 0.3).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,14 +50,22 @@ class CustomLoadingScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // App Logo or Icon
-            Icon(
-              Icons.electric_bolt,
-              size: 80,
-              color: Colors.white,
+            // Blinking Image Logo
+            AnimatedBuilder(
+              animation: _opacity,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _opacity.value,
+                  child: Image.asset(
+                    'assets/ICON.png',
+                    width: 80,
+                    height: 80,
+                  ),
+                );
+              },
             ),
             SizedBox(height: 30),
-            
+
             // Loading Text
             Text(
               'Memuat...',
@@ -42,7 +77,7 @@ class CustomLoadingScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 30),
-            
+
             // Custom Loading Indicator
             Container(
               width: 60,

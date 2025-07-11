@@ -35,6 +35,7 @@ flutter:
   assets:
     - assets/LOGO.png
     - assets/ICON2.png
+    - assets/ICON.png
     - assets/images/default_avatar.png
 
   fonts:
@@ -61,15 +62,15 @@ l10n:
 
 
 flutter_icons:
-  xandroid: true
-  ios: true
+  android: true
+  ios: false
   image_path: "assets/ICON2.png"
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/ICON2.png"
 
 flutter_launcher_icons:
   android: true
-  ios: true
+  ios: false
   image_path: "assets/ICON2.png"
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/ICON2.png"

@@ -26,6 +26,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
+    debugPrint("${ApiService().url}${User().profilePhotoPath.toString()}");
     _mqttService = MqttService(onConnectionStatusChanged: (status) {
       debugPrint('MQTT Connection Status from SplashPage: $status');
     }, onMessageReceived: (message) {

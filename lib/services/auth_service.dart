@@ -18,18 +18,18 @@ class AuthService {
         },
         useToken: false,
       );
-
-      if (response['success'] == true) {
+      print(response['data']['success']);
+      if (response['data']['success'] == true) {
         await _saveAuthData(
-          token: response['token'],
-          refreshToken: response['refresh_token'],
-          userData: response['user'],
+          token: response['data']['token'],
+          refreshToken: response['data']['refresh_token']??'',
+          userData: response['data']['user'],
         );
 
         return {
           "success": true,
           "message": "Registration successful",
-          "user": User.fromMap(response['user']),
+          "user": User.fromMap(response['data']['user']),
         };
       } else {
         return {
