@@ -1230,13 +1230,6 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text(
-                      'Cost (IDR)',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
