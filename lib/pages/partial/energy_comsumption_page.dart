@@ -162,13 +162,15 @@ class _EnergyConsumptionPageState extends State<EnergyConsumptionPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                s.energyConsumption,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  fontFamily: 'Poppins',
+              Flexible(
+                child: Text(
+                  s.energyConsumption,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    fontFamily: 'Poppins',
+                  ),
                 ),
               ),
               IconButton(

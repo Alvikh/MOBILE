@@ -1549,6 +1549,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'An error occurred'**
   String get errorOccurred;
+
+  /// No description provided for @type.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get type;
+
+  /// No description provided for @building.
+  ///
+  /// In en, this message translates to:
+  /// **'Building'**
+  String get building;
+
+  /// No description provided for @deleteDeviceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Apakah Anda yakin ingin menghapus {deviceName}?'**
+  String deleteDeviceMessage(Object deviceName);
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @deviceDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{deviceName} berhasil dihapus'**
+  String deviceDeleted(Object deviceName);
+
+  /// No description provided for @deleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Gagal menghapus perangkat: {error}'**
+  String deleteFailed(Object error);
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
 }
 
 class _AppLocalizationsDelegate

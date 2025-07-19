@@ -132,16 +132,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get completeAccountInfo => 'Lengkapi\ninformasi akun';
 
   @override
-  String get nameLabel => 'Nama *';
+  String get nameLabel => 'Nama';
 
   @override
-  String get phoneLabel => 'No. Hp *';
+  String get phoneLabel => 'No. Hp';
 
   @override
-  String get emailLabel => 'Email *';
+  String get emailLabel => 'Email';
 
   @override
-  String get addressLabel => 'Alamat *';
+  String get addressLabel => 'Alamat';
 
   @override
   String get signUp => 'Daftar';
@@ -189,7 +189,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get signInTitle => 'Masuk';
 
   @override
-  String get passwordLabel => 'Kata Sandi *';
+  String get passwordLabel => 'Kata Sandi';
 
   @override
   String get signInButton => 'Masuk';
@@ -204,7 +204,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get signUpTitle => 'Daftar';
 
   @override
-  String get confirmPasswordLabel => 'Konfirmasi Kata Sandi *';
+  String get confirmPasswordLabel => 'Konfirmasi Kata Sandi';
 
   @override
   String get nextButton => 'Lanjut';
@@ -773,4 +773,31 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get errorOccurred => 'Terjadi kesalahan';
+
+  @override
+  String get type => 'Tipe';
+
+  @override
+  String get building => 'Gedung';
+
+  @override
+  String deleteDeviceMessage(Object deviceName) {
+    return 'Are you sure you want to delete $deviceName?';
+  }
+
+  @override
+  String get confirm => 'Konfirmasi';
+
+  @override
+  String deviceDeleted(Object deviceName) {
+    return '$deviceName deleted successfully';
+  }
+
+  @override
+  String deleteFailed(Object error) {
+    return 'Failed to delete device: $error';
+  }
+
+  @override
+  String get refresh => 'Segarkan';
 }

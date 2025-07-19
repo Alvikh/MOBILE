@@ -771,4 +771,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorOccurred => 'An error occurred';
+
+  @override
+  String get type => 'Type';
+
+  @override
+  String get building => 'Building';
+
+  @override
+  String deleteDeviceMessage(Object deviceName) {
+    return 'Apakah Anda yakin ingin menghapus $deviceName?';
+  }
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String deviceDeleted(Object deviceName) {
+    return '$deviceName berhasil dihapus';
+  }
+
+  @override
+  String deleteFailed(Object error) {
+    return 'Gagal menghapus perangkat: $error';
+  }
+
+  @override
+  String get refresh => 'Refresh';
 }

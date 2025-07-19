@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/pages/device/edit_device_page.dart';
 import 'package:ta_mobile/services/device_service.dart';
@@ -16,6 +17,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
     final deviceService = ref.watch(deviceServiceProvider);
     final devicesAsync = ref.watch(deviceListProvider);
 
@@ -24,13 +26,11 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Daftar Perangkat',
-          style: TextStyle(
+        title: Text(
+          s.deviceListTitle,
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
@@ -43,6 +43,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () => ref.refresh(deviceListProvider),
+            tooltip: s.refresh,
           ),
         ],
       ),
@@ -62,18 +63,18 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
           if (devices.isEmpty) {
             return Center(
               child: Text(
-                'Tidak ada perangkat',
+                s.noDevices,
                 style: const TextStyle(fontFamily: 'Poppins'),
               ),
             );
           }
-          return _buildDeviceList(devices, deviceService);
+          return _buildDeviceList(devices, deviceService, s);
         },
       ),
     );
   }
 
-  Widget _buildDeviceList(List<Device> devices, DeviceService deviceService) {
+  Widget _buildDeviceList(List<Device> devices, DeviceService deviceService, AppLocalizations s) {
     return Stack(
       children: [
         ListView.builder(
@@ -81,7 +82,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
           itemCount: devices.length,
           itemBuilder: (context, index) {
             final device = devices[index];
-            return _buildDeviceCard(device, context, deviceService);
+            return _buildDeviceCard(device, context, deviceService, s);
           },
         ),
         if (_isLoading)
@@ -95,7 +96,11 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
   }
 
   Widget _buildDeviceCard(
-      Device device, BuildContext context, DeviceService deviceService) {
+    Device device, 
+    BuildContext context, 
+    DeviceService deviceService,
+    AppLocalizations s,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 15),
       elevation: 2,
@@ -131,7 +136,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    device.status.toUpperCase(),
+                    _getLocalizedStatus(device.status, s),
                     style: TextStyle(
                       color: _getStatusColor(device.status),
                       fontSize: 12,
@@ -143,11 +148,11 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
               ],
             ),
             const SizedBox(height: 8),
-            _buildDeviceDetailRow('ID Perangkat', device.deviceId),
-            _buildDeviceDetailRow('Tipe', device.type),
-            _buildDeviceDetailRow('Gedung', device.building),
+            _buildDeviceDetailRow(s.deviceId, device.deviceId),
+            _buildDeviceDetailRow(s.type, device.type),
+            _buildDeviceDetailRow(s.building, device.building),
             _buildDeviceDetailRow(
-              'Tanggal Instalasi',
+              s.installationDate,
               device.installationDate != null
                   ? '${device.installationDate!.day}/${device.installationDate!.month}/${device.installationDate!.year}'
                   : '-',
@@ -158,9 +163,9 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.edit, size: 18),
-                    label: const Text(
-                      'Edit',
-                      style: TextStyle(fontFamily: 'Poppins'),
+                    label: Text(
+                      s.edit,
+                      style: const TextStyle(fontFamily: 'Poppins'),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF0A5099),
@@ -177,9 +182,9 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.delete, size: 18),
-                    label: const Text(
-                      'Hapus',
-                      style: TextStyle(fontFamily: 'Poppins'),
+                    label: Text(
+                      s.delete,
+                      style: const TextStyle(fontFamily: 'Poppins'),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
@@ -190,7 +195,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     onPressed: () =>
-                        _showDeleteDialog(device, context, deviceService),
+                        _showDeleteDialog(device, context, deviceService, s),
                   ),
                 ),
               ],
@@ -199,6 +204,19 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
         ),
       ),
     );
+  }
+
+  String _getLocalizedStatus(String status, AppLocalizations s) {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return s.statusActive;
+      case 'inactive':
+        return s.statusInactive;
+      case 'maintenance':
+        return s.statusMaintenance;
+      default:
+        return status;
+    }
   }
 
   Color _getStatusColor(String status) {
@@ -252,41 +270,33 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
   }
 
   void _showDeleteDialog(
-      Device device, BuildContext context, DeviceService deviceService) {
+    Device device, 
+    BuildContext context, 
+    DeviceService deviceService,
+    AppLocalizations s,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
-            'Hapus Perangkat',
-            style: TextStyle(fontFamily: 'Poppins'),
-          ),
-          content: Text(
-            'Apakah Anda yakin ingin menghapus perangkat ${device.name}?',
-            style: const TextStyle(fontFamily: 'Poppins'),
-          ),
+          title: Text(s.deleteDeviceTitle),
+          content: Text(s.deleteDeviceMessage(device.name)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
           actions: [
             TextButton(
-              child: const Text(
-                'Batal',
-                style: TextStyle(fontFamily: 'Poppins'),
-              ),
+              child: Text(s.cancel),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: const Text(
-                'Hapus',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontFamily: 'Poppins',
-                ),
+              child: Text(
+                s.confirm,
+                style: const TextStyle(color: Colors.red),
               ),
               onPressed: () async {
                 Navigator.of(context).pop();
-                await _deleteDevice(device, context, deviceService);
+                await _deleteDevice(device, context, deviceService, s);
               },
             ),
           ],
@@ -296,19 +306,19 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
   }
 
   Future<void> _deleteDevice(
-      Device device, BuildContext context, DeviceService deviceService) async {
+    Device device, 
+    BuildContext context, 
+    DeviceService deviceService,
+    AppLocalizations s,
+  ) async {
     setState(() => _isLoading = true);
     try {
       await deviceService.deleteDevice(device.id!);
-      // ignore: unused_result
       ref.refresh(deviceListProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Perangkat ${device.name} berhasil dihapus',
-              style: const TextStyle(fontFamily: 'Poppins'),
-            ),
+            content: Text(s.deviceDeleted( device.name)),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -321,10 +331,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Gagal menghapus perangkat: ${e.toString()}',
-              style: const TextStyle(fontFamily: 'Poppins'),
-            ),
+            content: Text(s.deleteFailed(e.toString())),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
