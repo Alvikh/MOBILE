@@ -8,7 +8,7 @@ import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/models/user.dart';
 import 'package:ta_mobile/pages/device/add_device_page.dart';
-import 'package:ta_mobile/pages/partial/sensor_history_page.dart';
+import 'package:ta_mobile/pages/partial/energy_comsumption_page.dart';
 import 'package:ta_mobile/services/energy_analytic_service.dart';
 import 'package:ta_mobile/services/mqtt_service.dart';
 
@@ -335,7 +335,8 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
   }
 
   Widget _buildPredictionSection() {
-    // Pastikan data prediction ada dan valid dengan cara null-safety yang benar
+    final s = AppLocalizations.of(context)!;
+
     if (_predictionData == null ||
         _predictionData!['daily_predictions'] == null ||
         _predictionData!['monthly_predictions'] == null ||
@@ -343,7 +344,7 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
       return Container(
         padding: EdgeInsets.all(16),
         child: Text(
-          'Data prediksi tidak tersedia',
+          s.predictionDataNotAvailable,
           style: TextStyle(color: Colors.grey),
         ),
       );
@@ -357,13 +358,12 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
         List<dynamic>.from(_predictionData!['yearly_predictions'] ?? []);
 
     return SingleChildScrollView(
-      // Tambahkan ini untuk kompatibilitas dengan PageView
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: 20),
           Text(
-            'Energy Prediction',
+            s.energyPrediction,
             style: TextStyle(
               fontSize: 16,
               fontFamily: 'Poppins',
@@ -383,7 +383,8 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                 children: [
                   if (dailyPredictions.isNotEmpty) ...[
                     _buildPredictionTable(
-                      title: 'Prediksi Harian',
+                                            context: context,
+                      title: s.dailyPrediction,
                       data: dailyPredictions.take(7).toList(),
                       columns: [
                         'period',
@@ -392,17 +393,18 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                         'estimated_cost'
                       ],
                       headers: [
-                        'Tanggal',
-                        'Daya Rata2 (W)',
-                        'Energi (kWh)',
-                        'Perkiraan Biaya'
+                        s.date,
+                        s.averagePowerW,
+                        s.totalEnergyKwh,
+                        s.estimatedCost
                       ],
                     ),
                     SizedBox(height: 20),
                   ],
                   if (monthlyPredictions.isNotEmpty) ...[
                     _buildPredictionTable(
-                      title: 'Prediksi Bulanan',
+                      context: context,
+                      title: s.monthlyPrediction,
                       data: monthlyPredictions,
                       columns: [
                         'period',
@@ -411,17 +413,18 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                         'estimated_cost'
                       ],
                       headers: [
-                        'Bulan',
-                        'Daya Rata2 (W)',
-                        'Energi (kWh)',
-                        'Perkiraan Biaya'
+                        s.month,
+                        s.averagePowerW,
+                        s.totalEnergyKwh,
+                        s.estimatedCost
                       ],
                     ),
                     SizedBox(height: 20),
                   ],
                   if (yearlyPredictions.isNotEmpty) ...[
                     _buildPredictionTable(
-                      title: 'Prediksi Tahunan',
+                                            context: context,
+                      title: s.yearlyPrediction,
                       data: yearlyPredictions,
                       columns: [
                         'period',
@@ -430,10 +433,10 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                         'estimated_cost'
                       ],
                       headers: [
-                        'Tahun',
-                        'Daya Rata2 (W)',
-                        'Energi (kWh)',
-                        'Perkiraan Biaya'
+                        s.year,
+                        s.averagePowerW,
+                        s.totalEnergyKwh,
+                        s.estimatedCost
                       ],
                     ),
                   ],
@@ -446,8 +449,12 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
     );
   }
 
-  Widget _buildDailyPrediction(List<dynamic> dailyPredictions) {
-    // Ambil 7 data terbaru atau semua data jika kurang dari 7
+  Widget _buildDailyPrediction(
+      BuildContext context, List<dynamic> dailyPredictions) {
+    final s = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context);
+
+    // Take last 7 days or all if less than 7
     final last7Days = dailyPredictions.length > 7
         ? dailyPredictions.sublist(dailyPredictions.length - 7)
         : dailyPredictions;
@@ -455,9 +462,9 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Prediksi Harian (7 Hari Terakhir)',
-          style: TextStyle(
+        Text(
+          s.dailyPredictionTitle,
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
             color: Color(0xFF0A5099),
@@ -473,39 +480,39 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
-                // Header Tabel
-                const Row(
+                // Table Header
+                Row(
                   children: [
                     Expanded(
                       flex: 2,
                       child: Text(
-                        'Tanggal',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        s.dateColumn,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                     Expanded(
                       child: Text(
-                        'Energi (kWh)',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        s.energyColumn,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                     ),
                     Expanded(
                       child: Text(
-                        'Biaya',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        s.costColumn,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                     ),
                   ],
                 ),
                 const Divider(height: 16),
-                // Data Tabel
+                // Table Data
                 ...last7Days.map((day) {
                   final energy =
                       day['total_energy_kwh']?.toStringAsFixed(2) ?? '0.00';
                   final cost = day['estimated_cost'] != null
-                      ? NumberFormat("#,###")
+                      ? NumberFormat("#,###", locale.toString())
                           .format(day['estimated_cost'].toInt())
                       : '0';
 
@@ -516,7 +523,7 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                         Expanded(
                           flex: 2,
                           child: Text(
-                            day['period'] ?? '-',
+                            day['period'] ?? s.defaultValue,
                             style: const TextStyle(fontSize: 12),
                           ),
                         ),
@@ -529,7 +536,7 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                         ),
                         Expanded(
                           child: Text(
-                            'Rp$cost',
+                            '${s.currencySymbol}$cost',
                             textAlign: TextAlign.center,
                             style: const TextStyle(fontSize: 12),
                           ),
@@ -546,250 +553,279 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
     );
   }
 
-  Widget _buildPredictionSummary() {
-    final metrics = _metrics;
-    final units = metrics['units'] ?? {};
+  // Widget _buildPredictionSummary() {
+  //   final metrics = _metrics;
+  //   final units = metrics['units'] ?? {};
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Ringkasan Konsumsi',
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0A5099),
-            ),
-          ),
-          SizedBox(height: 12),
-          _buildStyledPredictionRow('Rata-rata Harian',
-              '${metrics['avg_daily_power']?.toStringAsFixed(2) ?? '0'} ${units['power'] ?? 'W'}'),
-          _buildStyledPredictionRow('Daya Puncak Hari Ini',
-              '${metrics['peak_power_today']?.toStringAsFixed(2) ?? '0'} ${units['power'] ?? 'W'}'),
-          _buildStyledPredictionRow('Energi Hari Ini',
-              '${(metrics['energy_today'] ?? 0).toStringAsFixed(2)} ${units['energy'] ?? 'kWh'}'),
-        ],
-      ),
-    );
-  }
+  //   return Container(
+  //     width: double.infinity,
+  //     padding: EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(10),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.05),
+  //           blurRadius: 4,
+  //           offset: Offset(0, 2),
+  //         ),
+  //       ],
+  //       border: Border.all(color: Colors.grey.shade300),
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'Ringkasan Konsumsi',
+  //           style: TextStyle(
+  //             fontSize: 16,
+  //             fontFamily: 'Poppins',
+  //             fontWeight: FontWeight.bold,
+  //             color: Color(0xFF0A5099),
+  //           ),
+  //         ),
+  //         SizedBox(height: 12),
+  //         _buildStyledPredictionRow('Rata-rata Harian',
+  //             '${metrics['metrics']['avg_daily_power']?.toStringAsFixed(2) ?? '0'} ${units['power'] ?? 'W'}'),
+  //         _buildStyledPredictionRow('Daya Puncak Hari Ini',
+  //             '${metrics['metrics']['peak_power_today']?.toStringAsFixed(2) ?? '0'} ${units['power'] ?? 'W'}'),
+  //         _buildStyledPredictionRow('Energi Hari Ini',
+  //             '${(metrics['metrics']['energy_today'] ?? 0).toStringAsFixed(2)} ${units['energy'] ?? 'kWh'}'),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Widget _buildStyledPredictionRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0A5099),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildStyledPredictionRow(String label, String value) {
+  //   return Padding(
+  //     padding: EdgeInsets.symmetric(vertical: 8),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       children: [
+  //         Text(
+  //           label,
+  //           style: TextStyle(
+  //             fontFamily: 'Poppins',
+  //             fontSize: 14,
+  //             fontWeight: FontWeight.w500,
+  //             color: Colors.black87,
+  //           ),
+  //         ),
+  //         Text(
+  //           value,
+  //           style: TextStyle(
+  //             fontFamily: 'Poppins',
+  //             fontSize: 14,
+  //             fontWeight: FontWeight.bold,
+  //             color: Color(0xFF0A5099),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildPredictionTable({
-    required String title,
-    required List<dynamic> data,
-    required List<String> columns,
-    required List<String> headers,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0A5099),
-          ),
-        ),
-        SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columnSpacing: 20,
-            columns: headers
-                .map((header) => DataColumn(
-                      label: Text(header,
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ))
-                .toList(),
-            rows: data.map<DataRow>((item) {
-              return DataRow(
-                cells: columns.map<DataCell>((col) {
-                  final value = item[col];
-                  String displayText = '-';
-
-                  if (value != null) {
-                    if (col == 'estimated_cost') {
-                      displayText =
-                          'Rp${NumberFormat("#,###").format(value.toInt())}';
-                    } else if (value is num) {
-                      displayText = value.toStringAsFixed(2);
-                    } else {
-                      displayText = value.toString();
-                    }
-                  }
-
-                  return DataCell(Text(displayText));
-                }).toList(),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPredictionRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget build(BuildContext context) {
+  required BuildContext context,
+  required String title,
+  required List<dynamic> data,
+  required List<String> columns,
+  required List<String> headers,
+}) {
   final s = AppLocalizations.of(context)!;
-  final bool hasMonitoringDevice = monitoringDevices.isNotEmpty;
-  
-  return Scaffold(
-    backgroundColor: const Color(0xFF0A5099),
-    body: Stack(
-      children: [
-        Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 80),
-                child: Stack(
-                  children: [
-                    Column(
-                      children: [
-                        _buildHeader(s),
-                        Container(
-                          margin: const EdgeInsets.all(10),
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: hasMonitoringDevice
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildDeviceSwitcher(context),
-                                    if (_isLoading)
-                                      const Center(child: CircularProgressIndicator()),
-                                    if (_errorMessage.isNotEmpty)
-                                      Text(_errorMessage, style: const TextStyle(color: Colors.red)),
-                                    const SizedBox(height: 15),
-                                    Text(
-                                      s.monitorLiveTitle,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontFamily: 'Poppins',
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 15),
-                                    _buildDateTimeCard(),
-                                    const SizedBox(height: 160), 
-                                    // _buildPeriodDropdown(s),
-                                    const SizedBox(height: 20),
-                                    _buildEnergyUsageChart(),
-                                    const SizedBox(height: 20),
-                                    _buildEnergyHistorySection(s),
-                                    const SizedBox(height: 20),
-                                    _buildPredictionSection(),
-                                  ],
-                                )
-                              : _buildNoDeviceCard(s),
-                        ),
-                      ],
-                    ),
-                    if(hasMonitoringDevice)
-                   (monitoringDevices.length<=1)?
-                      Positioned(
-                        top: 400,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          // Hilangkan margin horizontal untuk full width
-                          height: 130, // Sesuaikan dengan tinggi _buildLiveDataScroll()
-                          child: _buildLiveDataScroll(), // Fungsi baru untuk full width
-                        ),
-                      ):Positioned(
-                        top: 490, 
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          // Hilangkan margin horizontal untuk full width
-                          height: 130, // Sesuaikan dengan tinggi _buildLiveDataScroll()
-                          child: _buildLiveDataScroll(), // Fungsi baru untuk full width
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+  final locale = Localizations.localeOf(context);
+
+  String formatCurrency(num value) {
+    final formattedAmount = NumberFormat("#,##0", locale.toString()).format(value);
+    if (s.currencyFormat.contains('amount')) {
+      return s.currencyFormat.replaceAll('amount', formattedAmount);
+    }
+    return '$formattedAmount ${s.currencyFormat}';
+  }
+
+  String formatDecimal(num value) {
+    return s.decimalFormat.replaceAll('value', value.toStringAsFixed(2));
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF0A5099),
         ),
-      ],
-    ),
+      ),
+      const SizedBox(height: 8),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columnSpacing: 20,
+          columns: headers
+              .map((header) => DataColumn(
+                    label: Text(
+                      header,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ))
+              .toList(),
+          rows: data.map<DataRow>((item) {
+            return DataRow(
+              cells: columns.map<DataCell>((col) {
+                final value = item[col];
+                String displayText = s.defaultDisplayText;
+
+                if (value != null) {
+                  if (col == 'estimated_cost') {
+                    displayText = formatCurrency(value.toInt());
+                  } else if (value is num) {
+                    displayText = formatDecimal(value);
+                  } else {
+                    displayText = value.toString();
+                  }
+                }
+
+                return DataCell(Text(displayText));
+              }).toList(),
+            );
+          }).toList(),
+        ),
+      ),
+    ],
   );
 }
 
-  Widget _buildHeader(AppLocalizations s) {
+  // Widget _buildPredictionRow(String label, String value) {
+  //   return Padding(
+  //     padding: EdgeInsets.symmetric(vertical: 8),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       children: [
+  //         Text(
+  //           label,
+  //           style: TextStyle(
+  //             fontFamily: 'Poppins',
+  //             fontWeight: FontWeight.w500,
+  //           ),
+  //         ),
+  //         Text(
+  //           value,
+  //           style: TextStyle(
+  //             fontFamily: 'Poppins',
+  //             fontWeight: FontWeight.bold,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
+    final bool hasMonitoringDevice = monitoringDevices.isNotEmpty;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A5099),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 80),
+                  child: Stack(
+                    children: [
+                      Column(
+                        children: [
+                          _buildHeader(
+                              s,
+                              (monitoringDevices[currentDeviceIndex].id)
+                                  .toString()),
+                          Container(
+                            margin: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: hasMonitoringDevice
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildDeviceSwitcher(context),
+                                      if (_isLoading)
+                                        const Center(
+                                            child: CircularProgressIndicator()),
+                                      if (_errorMessage.isNotEmpty)
+                                        Text(_errorMessage,
+                                            style: const TextStyle(
+                                                color: Colors.red)),
+                                      const SizedBox(height: 15),
+                                      Text(
+                                        s.monitorLiveTitle,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontFamily: 'Poppins',
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 15),
+                                      _buildDateTimeCard(),
+                                      const SizedBox(height: 160),
+                                      // _buildPeriodDropdown(s),
+                                      const SizedBox(height: 20),
+                                      _buildEnergyUsageChart(context),
+                                      const SizedBox(height: 20),
+                                      _buildEnergyHistorySection(s),
+                                      const SizedBox(height: 20),
+                                      _buildPredictionSection(),
+                                    ],
+                                  )
+                                : _buildNoDeviceCard(s),
+                          ),
+                        ],
+                      ),
+                      if (hasMonitoringDevice)
+                        (monitoringDevices.length <= 1)
+                            ? Positioned(
+                                top: 400,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  // Hilangkan margin horizontal untuk full width
+                                  height:
+                                      130, // Sesuaikan dengan tinggi _buildLiveDataScroll()
+                                  child:
+                                      _buildLiveDataScroll(context), // Fungsi baru untuk full width
+                                ),
+                              )
+                            : Positioned(
+                                top: 490,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  // Hilangkan margin horizontal untuk full width
+                                  height:
+                                      130, // Sesuaikan dengan tinggi _buildLiveDataScroll()
+                                  child:
+                                      _buildLiveDataScroll(context), // Fungsi baru untuk full width
+                                ),
+                              ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(AppLocalizations s, String id) {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.all(30),
@@ -813,11 +849,13 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                   const SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: () {
-                       Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const SensorHistoryPage()),
-                );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => EnergyConsumptionPage(
+                                  deviceId: id,
+                                )),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2196F3),
@@ -907,59 +945,59 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
     );
   }
 
-  Widget _buildPeriodDropdown(AppLocalizations s) {
-    final periodOptions = {
-      'Daily': 'Harian',
-      'Weekly': 'Mingguan',
-      'Monthly': 'Bulanan',
-      'Yearly': 'Tahunan'
-    };
+  // Widget _buildPeriodDropdown(AppLocalizations s) {
+  //   final periodOptions = {
+  //     'Daily': 'Harian',
+  //     'Weekly': 'Mingguan',
+  //     'Monthly': 'Bulanan',
+  //     'Yearly': 'Tahunan'
+  //   };
 
-    final currentValue = periodOptions.entries
-        .firstWhere(
-          (entry) => entry.value == selectedPeriod,
-          orElse: () => periodOptions.entries.firstWhere(
-            (entry) => entry.key == selectedPeriod,
-          ),
-        )
-        .key;
+  //   final currentValue = periodOptions.entries
+  //       .firstWhere(
+  //         (entry) => entry.value == selectedPeriod,
+  //         orElse: () => periodOptions.entries.firstWhere(
+  //           (entry) => entry.key == selectedPeriod,
+  //         ),
+  //       )
+  //       .key;
 
-    return Row(
-      children: [
-        Text(
-          '${s.monitorPredictionDropdownLabel} ',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
-          ),
-        ),
-        const SizedBox(width: 10),
-        DropdownButton<String>(
-          value: currentValue,
-          items: periodOptions.entries.map((entry) {
-            return DropdownMenuItem<String>(
-              value: entry.key,
-              child: Text(
-                entry.value,
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              setState(() {
-                selectedPeriod = periodOptions[newValue]!;
-              });
-            }
-          },
-        ),
-      ],
-    );
-  }
+  //   return Row(
+  //     children: [
+  //       Text(
+  //         '${s.monitorPredictionDropdownLabel} ',
+  //         style: const TextStyle(
+  //           fontSize: 14,
+  //           fontWeight: FontWeight.w600,
+  //           fontFamily: 'Poppins',
+  //         ),
+  //       ),
+  //       const SizedBox(width: 10),
+  //       DropdownButton<String>(
+  //         value: currentValue,
+  //         items: periodOptions.entries.map((entry) {
+  //           return DropdownMenuItem<String>(
+  //             value: entry.key,
+  //             child: Text(
+  //               entry.value,
+  //               style: const TextStyle(
+  //                 fontFamily: 'Poppins',
+  //                 fontWeight: FontWeight.w500,
+  //               ),
+  //             ),
+  //           );
+  //         }).toList(),
+  //         onChanged: (String? newValue) {
+  //           if (newValue != null) {
+  //             setState(() {
+  //               selectedPeriod = periodOptions[newValue]!;
+  //             });
+  //           }
+  //         },
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildDateTimeCard() {
     return Container(
@@ -997,173 +1035,194 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
     );
   }
 
-  Widget _buildLiveDataScroll() {
-    final List<Map<String, dynamic>> dataList = [
-      {'label': 'Voltage', 'value': '$voltage V', 'icon': Icons.bolt},
-      {
-        'label': 'Current',
-        'value': '$current A',
-        'icon': Icons.electrical_services
-      },
-      {'label': 'Power', 'value': '$power W', 'icon': Icons.power},
-      {
-        'label': 'Energy',
-        'value': '$energy kWh',
-        'icon': Icons.battery_charging_full
-      },
-      {
-        'label': 'Frequency',
-        'value': '$frequency Hz',
-        'icon': Icons.multitrack_audio
-      },
-      {
-        'label': 'Power Factor',
-        'value': '$powerFactor VA',
-        'icon': Icons.bar_chart
-      },
-      {'label': 'Temp', 'value': '$temperature °C', 'icon': Icons.thermostat},
-      {'label': 'Humidity', 'value': '$humidity %', 'icon': Icons.water_drop},
-    ];
+  Widget _buildLiveDataScroll(BuildContext context) {
+  final s = AppLocalizations.of(context)!;
+  
+  final List<Map<String, dynamic>> dataList = [
+    {
+      'label': s.voltage,
+      'value': '$voltage ${s.voltageUnit}',
+      'icon': Icons.bolt
+    },
+    {
+      'label': s.current,
+      'value': '$current ${s.currentUnit}',
+      'icon': Icons.electrical_services
+    },
+    {
+      'label': s.power,
+      'value': '$power ${s.powerUnit}',
+      'icon': Icons.power
+    },
+    {
+      'label': s.energy,
+      'value': '$energy ${s.energyUnit}',
+      'icon': Icons.battery_charging_full
+    },
+    {
+      'label': s.frequency,
+      'value': '$frequency ${s.frequencyUnit}',
+      'icon': Icons.multitrack_audio
+    },
+    {
+      'label': s.powerFactor,
+      'value': '$powerFactor ${s.powerFactorUnit}',
+      'icon': Icons.bar_chart
+    },
+    {
+      'label': s.temperature,
+      'value': '$temperature ${s.temperatureUnit}',
+      'icon': Icons.thermostat
+    },
+    {
+      'label': s.humidity,
+      'value': '$humidity ${s.humidityUnit}',
+      'icon': Icons.water_drop
+    },
+  ];
 
-    return Container(
-      height: 135,
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: EdgeInsets.zero,
+  return Container(
+    height: 135,
+    margin: const EdgeInsets.symmetric(vertical: 10),
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.zero,
+      children: [
+        const SizedBox(width: 16),
+        ...dataList.map((item) {
+          return Container(
+            width: 125,
+            height: 125,
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(item['icon'] as IconData,
+                    size: 30, color: const Color(0xFF0A5099)),
+                const SizedBox(height: 8),
+                Text(
+                  item['label'].toString(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
+                    color: Color(0xFF0A5099),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item['value'].toString(),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'Poppins',
+                    color: Color(0xFF1F2937),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+        const SizedBox(width: 8),
+      ],
+    ),
+  );
+}
+
+ Widget _buildEnergyUsageChart(BuildContext context) {
+  final s = AppLocalizations.of(context)!;
+  final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+  final filteredData = _getFilteredHistoryData(deviceId);
+
+  return Card(
+    elevation: 2,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(width: 16),
-          ...dataList.map((item) {
-            return Container(
-              width: 125,
-              height: 125,
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB), // putih pucat modern
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-                border: Border.all(color: Colors.grey.shade200),
+          Text(
+            '${s.energyUsage} ($selectedPeriod)',
+            style: const TextStyle(
+              fontSize: 16,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0A5099),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 250,
+            child: SfCartesianChart(
+              tooltipBehavior: _tooltipBehavior,
+              primaryXAxis: CategoryAxis(),
+              primaryYAxis: NumericAxis(
+                title: AxisTitle(text: s.energyAxisLabel),
+                numberFormat: NumberFormat.compact(),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(item['icon'] as IconData,
-                      size: 30, color: const Color(0xFF0A5099)),
-                  const SizedBox(height: 8),
-                  Text(
-                    item['label'].toString(),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Poppins',
-                      color: Color(0xFF0A5099),
-                    ),
+              series: <CartesianSeries>[
+                ColumnSeries<Map<String, dynamic>, String>(
+                  dataSource: filteredData,
+                  xValueMapper: (data, _) => _formatDate(data['date']),
+                  yValueMapper: (data, _) => data['energy'],
+                  name: s.energySeriesName,
+                  color: const Color(0xFF0A5099),
+                  dataLabelSettings: const DataLabelSettings(
+                    isVisible: true,
+                    labelAlignment: ChartDataLabelAlignment.outer,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item['value'].toString(),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Poppins',
-                      color: Color(0xFF1F2937),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-          const SizedBox(width: 8),
+                  markerSettings: const MarkerSettings(isVisible: true),
+                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (_metrics.isNotEmpty) _buildUsageMetrics(context),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildEnergyUsageChart() {
-    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
-    final filteredData = _getFilteredHistoryData(deviceId);
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+  Widget _buildUsageMetrics(BuildContext context) {
+  final s = AppLocalizations.of(context)!;
+  
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    children: [
+      _buildMetricTile(
+        s.avgDaily,
+        '${(_metrics['avg_daily_power'] as num?)?.toStringAsFixed(2) ?? '0.00'} ${s.kilowatt}',
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Energy Usage ($selectedPeriod)',
-              style: const TextStyle(
-                fontSize: 16,
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0A5099),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 250,
-              child: SfCartesianChart(
-                tooltipBehavior: _tooltipBehavior,
-                primaryXAxis: CategoryAxis(),
-                primaryYAxis: NumericAxis(
-                  title: AxisTitle(text: 'Energy (kWh)'),
-                  numberFormat: NumberFormat.compact(),
-                ),
-                series: <CartesianSeries>[
-                  ColumnSeries<Map<String, dynamic>, String>(
-                    dataSource: filteredData,
-                    xValueMapper: (data, _) => _formatDate(data['date']),
-                    yValueMapper: (data, _) => data['energy'],
-                    name: 'Energy',
-                    color: const Color(0xFF0A5099),
-                    dataLabelSettings: const DataLabelSettings(
-                      isVisible: true,
-                      labelAlignment: ChartDataLabelAlignment.outer,
-                    ),
-                    markerSettings: const MarkerSettings(isVisible: true),
-                  )
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (_metrics.isNotEmpty) _buildUsageMetrics(),
-          ],
-        ),
+      _buildMetricTile(
+        s.peakToday,
+        '${(_metrics['peak_power_today'] as num?)?.toStringAsFixed(2) ?? '0.00'} ${s.kilowatt}',
       ),
-    );
-  }
-
-  Widget _buildUsageMetrics() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildMetricTile(
-          'Avg Daily',
-          '${(_metrics['avg_daily_power'] as num?)?.toStringAsFixed(2) ?? '0.00'} kW',
-        ),
-        _buildMetricTile(
-          'Peak Today',
-          '${(_metrics['peak_power_today'] as num?)?.toStringAsFixed(2) ?? '0.00'} kW',
-        ),
-        _buildMetricTile(
-          'Energy Today',
-          '${((_metrics['energy_today'] ?? 0) / 1000).toStringAsFixed(2)} kWh',
-        ),
-      ],
-    );
-  }
+      _buildMetricTile(
+        s.energyToday,
+        '${((_metrics['energy_today'] ?? 0) / 1000).toStringAsFixed(2)} ${s.kilowattHour}',
+      ),
+    ],
+  );
+}
 
   Widget _buildMetricTile(String title, String value) {
     return Column(
@@ -1187,88 +1246,86 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
   }
 
   Widget _buildEnergyHistorySection(AppLocalizations s) {
-    final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
-    final filteredData = _getFilteredHistoryData(deviceId);
+  final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
+  final filteredData = _getFilteredHistoryData(deviceId);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Energy History ($selectedPeriod)',
-          style: const TextStyle(
-            fontSize: 16,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0A5099),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        '${s.energyHistory} ($selectedPeriod)',
+        style: const TextStyle(
+          fontSize: 16,
+          fontFamily: 'Poppins',
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF0A5099),
+        ),
+      ),
+      const SizedBox(height: 10),
+      Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    s.date,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${s.energy} (${s.kilowattHour})',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ...filteredData.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _formatDate(entry['date']),
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      Text(
+                        entry['energy'].toStringAsFixed(2),
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      Text(
+                        "",
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ],
           ),
         ),
-        // _buildPredictionSummary(),
-        const SizedBox(height: 10),
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(15),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
-                      'Date',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Energy (kWh)',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ...filteredData.map((entry) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _formatDate(entry['date']),
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                        Text(
-                          entry['energy'].toStringAsFixed(2),
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                        Text(
-                          // NumberFormat("#,###").format(entry['cost'].toInt()),
-                          "",
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   List<Map<String, dynamic>> _getFilteredHistoryData(String deviceId) {
     final now = DateTime.now();

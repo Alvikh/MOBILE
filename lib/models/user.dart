@@ -7,7 +7,6 @@ class User {
   static final User _instance = User._internal();
   factory User() => _instance;
   User._internal();
-
   // User properties with proper null handling
   int? id;
   String? name;
@@ -25,6 +24,9 @@ class User {
   String? profilePhotoPath;
   DateTime? createdAt;
   DateTime? updatedAt;
+  String? verificationCode;
+  DateTime? verificationCodeExpiresAt;
+  
   List<Device> devices = [];
 
   /// Initialize user with data from API response
@@ -46,6 +48,8 @@ class User {
       profilePhotoPath = _parseString(data['profile_photo_path']);
       createdAt = _parseDateTime(data['created_at']);
       updatedAt = _parseDateTime(data['updated_at']);
+      verificationCode = _parseString(data['verification_code']);
+      verificationCodeExpiresAt = _parseDateTime(data['verification_code_expires_at']);
 
       if (data['devices'] != null) {
         if (data['devices'] is List) {
@@ -259,6 +263,8 @@ class User {
       'profile_photo_path': profilePhotoPath,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'verification_code': verificationCode,
+      'verification_code_expires_at': verificationCodeExpiresAt?.toIso8601String(),
       'devices': devices.map((device) => device.toMap()).toList(),
     };
   }
@@ -312,6 +318,8 @@ class User {
     String? profilePhotoPath,
     DateTime? createdAt,
     DateTime? updatedAt,
+        String? verificationCode,
+    DateTime? verificationCodeExpiresAt,
     List<Device>? devices,
   }) {
     return User()
@@ -332,7 +340,16 @@ class User {
       ..profilePhotoPath = profilePhotoPath ?? this.profilePhotoPath
       ..createdAt = createdAt ?? this.createdAt
       ..updatedAt = updatedAt ?? this.updatedAt
+            ..verificationCode = verificationCode ?? this.verificationCode
+      ..verificationCodeExpiresAt = verificationCodeExpiresAt ?? this.verificationCodeExpiresAt
       ..devices = devices ?? List.from(this.devices);
+  }
+  bool get isEmailVerified => emailVerifiedAt != null;
+  bool get hasActiveVerificationCode {
+    if (verificationCode == null || verificationCodeExpiresAt == null) {
+      return false;
+    }
+    return verificationCodeExpiresAt!.isAfter(DateTime.now());
   }
 
   String get formattedCreatedAt {

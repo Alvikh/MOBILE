@@ -62,7 +62,8 @@ import 'app_localizations_id.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -70,7 +71,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -82,7 +84,8 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
     delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -1096,9 +1099,460 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to send reset link. Please try again later.'**
   String get linkSentFailed;
+
+  /// No description provided for @emailVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Verified'**
+  String get emailVerified;
+
+  /// No description provided for @verifyEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Email'**
+  String get verifyEmail;
+
+  /// No description provided for @emailAlreadyVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email is already verified'**
+  String get emailAlreadyVerified;
+
+  /// No description provided for @enterVerificationCodeSentToEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit verification code sent to your email.'**
+  String get enterVerificationCodeSentToEmail;
+
+  /// No description provided for @pleaseEnter6DigitCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a 6-digit code'**
+  String get pleaseEnter6DigitCode;
+
+  /// No description provided for @emailSuccessfullyVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Email successfully verified!'**
+  String get emailSuccessfullyVerified;
+
+  /// No description provided for @verificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification failed'**
+  String get verificationFailed;
+
+  /// No description provided for @verificationCodeResent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code resent'**
+  String get verificationCodeResent;
+
+  /// No description provided for @failedToResendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to resend code'**
+  String get failedToResendCode;
+
+  /// No description provided for @verify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verify;
+
+  /// No description provided for @resendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Code'**
+  String get resendCode;
+
+  /// No description provided for @activeStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get activeStatus;
+
+  /// No description provided for @inactiveStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get inactiveStatus;
+
+  /// No description provided for @predictionDataNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Prediction data not available'**
+  String get predictionDataNotAvailable;
+
+  /// No description provided for @energyPrediction.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy Prediction'**
+  String get energyPrediction;
+
+  /// No description provided for @dailyPrediction.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Prediction'**
+  String get dailyPrediction;
+
+  /// No description provided for @monthlyPrediction.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Prediction'**
+  String get monthlyPrediction;
+
+  /// No description provided for @yearlyPrediction.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly Prediction'**
+  String get yearlyPrediction;
+
+  /// No description provided for @date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get date;
+
+  /// No description provided for @month.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get month;
+
+  /// No description provided for @year.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get year;
+
+  /// No description provided for @averagePowerW.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Power (W)'**
+  String get averagePowerW;
+
+  /// No description provided for @totalEnergyKwh.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy (kWh)'**
+  String get totalEnergyKwh;
+
+  /// No description provided for @estimatedCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated Cost'**
+  String get estimatedCost;
+
+  /// No description provided for @dailyPredictionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Prediction (Last 7 Days)'**
+  String get dailyPredictionTitle;
+
+  /// No description provided for @dateColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get dateColumn;
+
+  /// No description provided for @energyColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy (kWh)'**
+  String get energyColumn;
+
+  /// No description provided for @costColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost'**
+  String get costColumn;
+
+  /// No description provided for @currencySymbol.
+  ///
+  /// In en, this message translates to:
+  /// **'Rp'**
+  String get currencySymbol;
+
+  /// No description provided for @defaultValue.
+  ///
+  /// In en, this message translates to:
+  /// **'-'**
+  String get defaultValue;
+
+  /// No description provided for @currencyFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'\\\$amount'**
+  String get currencyFormat;
+
+  /// No description provided for @defaultDisplayText.
+  ///
+  /// In en, this message translates to:
+  /// **'-'**
+  String get defaultDisplayText;
+
+  /// No description provided for @decimalFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'value'**
+  String get decimalFormat;
+
+  /// No description provided for @voltage.
+  ///
+  /// In en, this message translates to:
+  /// **'Voltage'**
+  String get voltage;
+
+  /// No description provided for @current.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get current;
+
+  /// No description provided for @power.
+  ///
+  /// In en, this message translates to:
+  /// **'Power'**
+  String get power;
+
+  /// No description provided for @energy.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy'**
+  String get energy;
+
+  /// No description provided for @frequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequency'**
+  String get frequency;
+
+  /// No description provided for @powerFactor.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Factor'**
+  String get powerFactor;
+
+  /// No description provided for @temperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get temperature;
+
+  /// No description provided for @humidity.
+  ///
+  /// In en, this message translates to:
+  /// **'Humidity'**
+  String get humidity;
+
+  /// No description provided for @voltageUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'V'**
+  String get voltageUnit;
+
+  /// No description provided for @currentUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'A'**
+  String get currentUnit;
+
+  /// No description provided for @powerUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'W'**
+  String get powerUnit;
+
+  /// No description provided for @energyUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'kWh'**
+  String get energyUnit;
+
+  /// No description provided for @frequencyUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Hz'**
+  String get frequencyUnit;
+
+  /// No description provided for @powerFactorUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'VA'**
+  String get powerFactorUnit;
+
+  /// No description provided for @temperatureUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'°C'**
+  String get temperatureUnit;
+
+  /// No description provided for @humidityUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'%'**
+  String get humidityUnit;
+
+  /// No description provided for @energyUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy Usage'**
+  String get energyUsage;
+
+  /// No description provided for @energyAxisLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy (kWh)'**
+  String get energyAxisLabel;
+
+  /// No description provided for @energySeriesName.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy'**
+  String get energySeriesName;
+
+  /// No description provided for @avgDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Daily'**
+  String get avgDaily;
+
+  /// No description provided for @peakToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak Today'**
+  String get peakToday;
+
+  /// No description provided for @energyToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy Today'**
+  String get energyToday;
+
+  /// No description provided for @kilowatt.
+  ///
+  /// In en, this message translates to:
+  /// **'kW'**
+  String get kilowatt;
+
+  /// No description provided for @kilowattHour.
+  ///
+  /// In en, this message translates to:
+  /// **'kWh'**
+  String get kilowattHour;
+
+  /// No description provided for @energyHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy History'**
+  String get energyHistory;
+
+  /// No description provided for @energyConsumption.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy Consumption'**
+  String get energyConsumption;
+
+  /// No description provided for @energyConsumptionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'View historical energy consumption data'**
+  String get energyConsumptionDescription;
+
+  /// No description provided for @energyConsumptionData.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy Consumption Data'**
+  String get energyConsumptionData;
+
+  /// No description provided for @hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours'**
+  String get hours;
+
+  /// No description provided for @selectDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date Range'**
+  String get selectDateRange;
+
+  /// No description provided for @avgEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Energy'**
+  String get avgEnergy;
+
+  /// No description provided for @peakPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak Power'**
+  String get peakPower;
+
+  /// No description provided for @totalEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Energy'**
+  String get totalEnergy;
+
+  /// No description provided for @watt.
+  ///
+  /// In en, this message translates to:
+  /// **'Watt'**
+  String get watt;
+
+  /// No description provided for @loadingEnergyData.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading energy data...'**
+  String get loadingEnergyData;
+
+  /// No description provided for @noEnergyData.
+  ///
+  /// In en, this message translates to:
+  /// **'No Energy Data Available'**
+  String get noEnergyData;
+
+  /// No description provided for @adjustDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your date range or check your connection'**
+  String get adjustDateRange;
+
+  /// No description provided for @hourlyPowerConsumption.
+  ///
+  /// In en, this message translates to:
+  /// **'Hourly Power Consumption'**
+  String get hourlyPowerConsumption;
+
+  /// No description provided for @time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get time;
+
+  /// No description provided for @dataLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load data'**
+  String get dataLoadFailed;
+
+  /// No description provided for @sendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send reset link'**
+  String get sendFailed;
+
+  /// No description provided for @errorOccurred.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred'**
+  String get errorOccurred;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -1107,25 +1561,25 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'id'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'id'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en': return AppLocalizationsEn();
-    case 'id': return AppLocalizationsId();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'id':
+      return AppLocalizationsId();
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

@@ -57,7 +57,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logoutConfirmationTitle => 'Logout Confirmation';
 
   @override
-  String get logoutConfirmationMessage => 'Are you sure you want to log out of this account?';
+  String get logoutConfirmationMessage =>
+      'Are you sure you want to log out of this account?';
 
   @override
   String get cancel => 'Cancel';
@@ -178,7 +179,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgotPasswordHeader => 'Forgot password?';
 
   @override
-  String get forgotPasswordDescription => 'We will send a link to reset your password to your email.';
+  String get forgotPasswordDescription =>
+      'We will send a link to reset your password to your email.';
 
   @override
   String get send => 'Send';
@@ -370,7 +372,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get introTitle => '1. Introduction';
 
   @override
-  String get introContent => 'Smart Power Management is an application to monitor and control electrical systems efficiently. Make sure you have a stable internet connection for optimal performance.';
+  String get introContent =>
+      'Smart Power Management is an application to monitor and control electrical systems efficiently. Make sure you have a stable internet connection for optimal performance.';
 
   @override
   String get installTitle => '2. Installation and Preparation';
@@ -379,13 +382,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadTitle => 'Download and Install the App';
 
   @override
-  String get downloadContent => 'Download Smart Power Management on Google Play Store or Apple Store. Make sure the device has enough storage space.';
+  String get downloadContent =>
+      'Download Smart Power Management on Google Play Store or Apple Store. Make sure the device has enough storage space.';
 
   @override
   String get internetTitle => 'Internet Connection';
 
   @override
-  String get internetContent => 'Make sure the device is connected to a stable internet connection to ensure the application works properly.';
+  String get internetContent =>
+      'Make sure the device is connected to a stable internet connection to ensure the application works properly.';
 
   @override
   String get monitoringTitle => '3. Add Monitoring Device';
@@ -394,13 +399,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openMonitoringTitle => 'Open the Monitoring Menu';
 
   @override
-  String get openMonitoringContent => 'On the main page of the application, select the Monitoring menu.';
+  String get openMonitoringContent =>
+      'On the main page of the application, select the Monitoring menu.';
 
   @override
   String get addMonitoringDeviceTitle => 'Add New Device';
 
   @override
-  String get addMonitoringDeviceContent => 'Press the (+) icon, then enter the device ID and password provided by the technician.';
+  String get addMonitoringDeviceContent =>
+      'Press the (+) icon, then enter the device ID and password provided by the technician.';
 
   @override
   String get controllingTitle => '4. Connecting Control Devices';
@@ -409,10 +416,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openControllingTitle => 'Open the Controlling Menu';
 
   @override
-  String get openControllingContent => 'From the main page, select the Controlling menu to start connecting control devices.';
+  String get openControllingContent =>
+      'From the main page, select the Controlling menu to start connecting control devices.';
 
   @override
-  String get addControllingDeviceContent => 'Enter device information such as name, IP address, and access code correctly.';
+  String get addControllingDeviceContent =>
+      'Enter device information such as name, IP address, and access code correctly.';
 
   @override
   String get tipsTitle => '5. Tips and Troubleshooting';
@@ -421,16 +430,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cannotConnectTitle => 'Device Cannot Connect';
 
   @override
-  String get cannotConnectContent => 'Make sure the ID and Password entered are correct, and the device is in pairing mode.';
+  String get cannotConnectContent =>
+      'Make sure the ID and Password entered are correct, and the device is in pairing mode.';
 
   @override
   String get supportTitle => 'Technical Support';
 
   @override
-  String get supportContent => 'If you experience any issues, please contact customer service via the in-app technical support feature.';
+  String get supportContent =>
+      'If you experience any issues, please contact customer service via the in-app technical support feature.';
 
   @override
-  String get closingMessage => 'Welcome to use Smart Power Management for smarter and more efficient electricity management!';
+  String get closingMessage =>
+      'Welcome to use Smart Power Management for smarter and more efficient electricity management!';
 
   @override
   String homeWelcomeTitle(Object name) {
@@ -459,10 +471,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monitorHistoryButton => 'View Data History';
 
   @override
-  String get monitorDeviceUnavailableTitle => 'Monitoring device is not available';
+  String get monitorDeviceUnavailableTitle =>
+      'Monitoring device is not available';
 
   @override
-  String get monitorDeviceUnavailableDesc => 'Please register your monitoring device first to access this feature.';
+  String get monitorDeviceUnavailableDesc =>
+      'Please register your monitoring device first to access this feature.';
 
   @override
   String get monitorLiveTitle => 'Live Monitoring Data';
@@ -527,5 +541,234 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkSentSuccess => 'Reset link has been sent to your email.';
 
   @override
-  String get linkSentFailed => 'Failed to send reset link. Please try again later.';
+  String get linkSentFailed =>
+      'Failed to send reset link. Please try again later.';
+
+  @override
+  String get emailVerified => 'Email Verified';
+
+  @override
+  String get verifyEmail => 'Verify Email';
+
+  @override
+  String get emailAlreadyVerified => 'Your email is already verified';
+
+  @override
+  String get enterVerificationCodeSentToEmail =>
+      'Enter the 6-digit verification code sent to your email.';
+
+  @override
+  String get pleaseEnter6DigitCode => 'Please enter a 6-digit code';
+
+  @override
+  String get emailSuccessfullyVerified => 'Email successfully verified!';
+
+  @override
+  String get verificationFailed => 'Verification failed';
+
+  @override
+  String get verificationCodeResent => 'Verification code resent';
+
+  @override
+  String get failedToResendCode => 'Failed to resend code';
+
+  @override
+  String get verify => 'Verify';
+
+  @override
+  String get resendCode => 'Resend Code';
+
+  @override
+  String get activeStatus => 'Active';
+
+  @override
+  String get inactiveStatus => 'Inactive';
+
+  @override
+  String get predictionDataNotAvailable => 'Prediction data not available';
+
+  @override
+  String get energyPrediction => 'Energy Prediction';
+
+  @override
+  String get dailyPrediction => 'Daily Prediction';
+
+  @override
+  String get monthlyPrediction => 'Monthly Prediction';
+
+  @override
+  String get yearlyPrediction => 'Yearly Prediction';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get month => 'Month';
+
+  @override
+  String get year => 'Year';
+
+  @override
+  String get averagePowerW => 'Avg Power (W)';
+
+  @override
+  String get totalEnergyKwh => 'Energy (kWh)';
+
+  @override
+  String get estimatedCost => 'Estimated Cost';
+
+  @override
+  String get dailyPredictionTitle => 'Daily Prediction (Last 7 Days)';
+
+  @override
+  String get dateColumn => 'Date';
+
+  @override
+  String get energyColumn => 'Energy (kWh)';
+
+  @override
+  String get costColumn => 'Cost';
+
+  @override
+  String get currencySymbol => 'Rp';
+
+  @override
+  String get defaultValue => '-';
+
+  @override
+  String get currencyFormat => '\\\$amount';
+
+  @override
+  String get defaultDisplayText => '-';
+
+  @override
+  String get decimalFormat => 'value';
+
+  @override
+  String get voltage => 'Voltage';
+
+  @override
+  String get current => 'Current';
+
+  @override
+  String get power => 'Power';
+
+  @override
+  String get energy => 'Energy';
+
+  @override
+  String get frequency => 'Frequency';
+
+  @override
+  String get powerFactor => 'Power Factor';
+
+  @override
+  String get temperature => 'Temperature';
+
+  @override
+  String get humidity => 'Humidity';
+
+  @override
+  String get voltageUnit => 'V';
+
+  @override
+  String get currentUnit => 'A';
+
+  @override
+  String get powerUnit => 'W';
+
+  @override
+  String get energyUnit => 'kWh';
+
+  @override
+  String get frequencyUnit => 'Hz';
+
+  @override
+  String get powerFactorUnit => 'VA';
+
+  @override
+  String get temperatureUnit => '°C';
+
+  @override
+  String get humidityUnit => '%';
+
+  @override
+  String get energyUsage => 'Energy Usage';
+
+  @override
+  String get energyAxisLabel => 'Energy (kWh)';
+
+  @override
+  String get energySeriesName => 'Energy';
+
+  @override
+  String get avgDaily => 'Avg Daily';
+
+  @override
+  String get peakToday => 'Peak Today';
+
+  @override
+  String get energyToday => 'Energy Today';
+
+  @override
+  String get kilowatt => 'kW';
+
+  @override
+  String get kilowattHour => 'kWh';
+
+  @override
+  String get energyHistory => 'Energy History';
+
+  @override
+  String get energyConsumption => 'Energy Consumption';
+
+  @override
+  String get energyConsumptionDescription =>
+      'View historical energy consumption data';
+
+  @override
+  String get energyConsumptionData => 'Energy Consumption Data';
+
+  @override
+  String get hours => 'Hours';
+
+  @override
+  String get selectDateRange => 'Select Date Range';
+
+  @override
+  String get avgEnergy => 'Avg Energy';
+
+  @override
+  String get peakPower => 'Peak Power';
+
+  @override
+  String get totalEnergy => 'Total Energy';
+
+  @override
+  String get watt => 'Watt';
+
+  @override
+  String get loadingEnergyData => 'Loading energy data...';
+
+  @override
+  String get noEnergyData => 'No Energy Data Available';
+
+  @override
+  String get adjustDateRange =>
+      'Try adjusting your date range or check your connection';
+
+  @override
+  String get hourlyPowerConsumption => 'Hourly Power Consumption';
+
+  @override
+  String get time => 'Time';
+
+  @override
+  String get dataLoadFailed => 'Failed to load data';
+
+  @override
+  String get sendFailed => 'Failed to send reset link';
+
+  @override
+  String get errorOccurred => 'An error occurred';
 }

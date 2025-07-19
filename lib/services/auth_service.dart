@@ -18,8 +18,8 @@ class AuthService {
         },
         useToken: false,
       );
-      print(response['data']['success']);
-      if (response['data']['success'] == true) {
+      print(response['success']);
+      if (response['success'] == true) {
         await _saveAuthData(
           token: response['data']['token'],
           refreshToken: response['data']['refresh_token']??'',

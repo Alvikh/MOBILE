@@ -17,10 +17,10 @@ class MqttService {
     OnMessageReceived? onMessageReceived,
     OnConnectionStatusChanged? onConnectionStatusChanged,
     List<String> topics = const [
-      'iot/monitoring',
-      'smartpower/device/control',
-      'smartpower/device/status',
-      'smartpower/device/alert',
+      'iot/monitoring/#',
+      'smartpower/device/status/#',
+      'smartpower/device/sensor/#',
+      'smartpower/device/alert/#',
     ],
   }) {
     _instance.onMessageReceived = onMessageReceived;

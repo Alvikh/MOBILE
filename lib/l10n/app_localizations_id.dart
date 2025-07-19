@@ -57,7 +57,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get logoutConfirmationTitle => 'Konfirmasi Keluar';
 
   @override
-  String get logoutConfirmationMessage => 'Apakah Anda yakin ingin keluar dari akun ini?';
+  String get logoutConfirmationMessage =>
+      'Apakah Anda yakin ingin keluar dari akun ini?';
 
   @override
   String get cancel => 'Batal';
@@ -178,7 +179,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get forgotPasswordHeader => 'Lupa kata sandi?';
 
   @override
-  String get forgotPasswordDescription => 'Kami akan mengirimkan tautan untuk mengatur ulang kata sandi ke email Anda.';
+  String get forgotPasswordDescription =>
+      'Kami akan mengirimkan tautan untuk mengatur ulang kata sandi ke email Anda.';
 
   @override
   String get send => 'Kirim';
@@ -232,7 +234,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get noControlDeviceTitle => 'Anda belum memiliki perangkat kontrol';
 
   @override
-  String get noControlDeviceSubtitle => 'Silakan tambahkan perangkat kontrol terlebih dahulu.';
+  String get noControlDeviceSubtitle =>
+      'Silakan tambahkan perangkat kontrol terlebih dahulu.';
 
   @override
   String get quickScenes => 'Skena Cepat';
@@ -364,13 +367,15 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get userGuideTitle => 'Panduan Penggunaan Aplikasi Smart Power Management';
+  String get userGuideTitle =>
+      'Panduan Penggunaan Aplikasi Smart Power Management';
 
   @override
   String get introTitle => '1. Pendahuluan';
 
   @override
-  String get introContent => 'Smart Power Management adalah aplikasi untuk memantau dan mengendalikan sistem kelistrikan secara efisien. Pastikan Anda memiliki koneksi internet yang stabil untuk performa optimal.';
+  String get introContent =>
+      'Smart Power Management adalah aplikasi untuk memantau dan mengendalikan sistem kelistrikan secara efisien. Pastikan Anda memiliki koneksi internet yang stabil untuk performa optimal.';
 
   @override
   String get installTitle => '2. Instalasi dan Persiapan';
@@ -379,13 +384,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get downloadTitle => 'Unduh dan Instal Aplikasi';
 
   @override
-  String get downloadContent => 'Unduh Smart Power Management di Google Play Store atau Apple Store. Pastikan perangkat memiliki ruang penyimpanan yang cukup.';
+  String get downloadContent =>
+      'Unduh Smart Power Management di Google Play Store atau Apple Store. Pastikan perangkat memiliki ruang penyimpanan yang cukup.';
 
   @override
   String get internetTitle => 'Koneksi Internet';
 
   @override
-  String get internetContent => 'Pastikan perangkat terhubung ke koneksi internet yang stabil agar aplikasi dapat berjalan dengan baik.';
+  String get internetContent =>
+      'Pastikan perangkat terhubung ke koneksi internet yang stabil agar aplikasi dapat berjalan dengan baik.';
 
   @override
   String get monitoringTitle => '3. Tambahkan Perangkat Monitoring';
@@ -394,13 +401,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get openMonitoringTitle => 'Buka Menu Monitoring';
 
   @override
-  String get openMonitoringContent => 'Pada halaman utama aplikasi, pilih menu Monitoring.';
+  String get openMonitoringContent =>
+      'Pada halaman utama aplikasi, pilih menu Monitoring.';
 
   @override
   String get addMonitoringDeviceTitle => 'Tambah Perangkat Baru';
 
   @override
-  String get addMonitoringDeviceContent => 'Tekan ikon (+), lalu masukkan ID dan password perangkat yang diberikan oleh teknisi.';
+  String get addMonitoringDeviceContent =>
+      'Tekan ikon (+), lalu masukkan ID dan password perangkat yang diberikan oleh teknisi.';
 
   @override
   String get controllingTitle => '4. Hubungkan Perangkat Kontrol';
@@ -409,10 +418,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get openControllingTitle => 'Buka Menu Controlling';
 
   @override
-  String get openControllingContent => 'Dari halaman utama, pilih menu Controlling untuk mulai menghubungkan perangkat kontrol.';
+  String get openControllingContent =>
+      'Dari halaman utama, pilih menu Controlling untuk mulai menghubungkan perangkat kontrol.';
 
   @override
-  String get addControllingDeviceContent => 'Masukkan informasi perangkat seperti nama, alamat IP, dan kode akses dengan benar.';
+  String get addControllingDeviceContent =>
+      'Masukkan informasi perangkat seperti nama, alamat IP, dan kode akses dengan benar.';
 
   @override
   String get tipsTitle => '5. Tips dan Pemecahan Masalah';
@@ -421,16 +432,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get cannotConnectTitle => 'Perangkat Tidak Dapat Terhubung';
 
   @override
-  String get cannotConnectContent => 'Pastikan ID dan Password yang dimasukkan sudah benar, dan perangkat dalam mode pairing.';
+  String get cannotConnectContent =>
+      'Pastikan ID dan Password yang dimasukkan sudah benar, dan perangkat dalam mode pairing.';
 
   @override
   String get supportTitle => 'Dukungan Teknis';
 
   @override
-  String get supportContent => 'Jika mengalami masalah, silakan hubungi layanan pelanggan melalui fitur dukungan teknis dalam aplikasi.';
+  String get supportContent =>
+      'Jika mengalami masalah, silakan hubungi layanan pelanggan melalui fitur dukungan teknis dalam aplikasi.';
 
   @override
-  String get closingMessage => 'Selamat menggunakan Smart Power Management untuk pengelolaan listrik yang lebih cerdas dan efisien!';
+  String get closingMessage =>
+      'Selamat menggunakan Smart Power Management untuk pengelolaan listrik yang lebih cerdas dan efisien!';
 
   @override
   String homeWelcomeTitle(Object name) {
@@ -459,10 +473,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get monitorHistoryButton => 'Lihat Riwayat Data';
 
   @override
-  String get monitorDeviceUnavailableTitle => 'Perangkat monitoring belum tersedia';
+  String get monitorDeviceUnavailableTitle =>
+      'Perangkat monitoring belum tersedia';
 
   @override
-  String get monitorDeviceUnavailableDesc => 'Silakan daftarkan perangkat monitoring terlebih dahulu untuk mengakses fitur ini.';
+  String get monitorDeviceUnavailableDesc =>
+      'Silakan daftarkan perangkat monitoring terlebih dahulu untuk mengakses fitur ini.';
 
   @override
   String get monitorLiveTitle => 'Data Monitoring Langsung';
@@ -528,4 +544,233 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get linkSentFailed => 'Gagal mengirim tautan reset. Coba lagi nanti.';
+
+  @override
+  String get emailVerified => 'Email Terverifikasi';
+
+  @override
+  String get verifyEmail => 'Verifikasi Email';
+
+  @override
+  String get emailAlreadyVerified => 'Email Anda sudah terverifikasi';
+
+  @override
+  String get enterVerificationCodeSentToEmail =>
+      'Masukkan kode verifikasi 6 digit yang dikirim ke email Anda.';
+
+  @override
+  String get pleaseEnter6DigitCode => 'Silakan masukkan kode 6 digit';
+
+  @override
+  String get emailSuccessfullyVerified => 'Email berhasil diverifikasi!';
+
+  @override
+  String get verificationFailed => 'Verifikasi gagal';
+
+  @override
+  String get verificationCodeResent =>
+      'Kode verifikasi telah dikirim ulang ke email Anda.';
+
+  @override
+  String get failedToResendCode => 'Gagal mengirim ulang kode';
+
+  @override
+  String get verify => 'Verifikasi';
+
+  @override
+  String get resendCode => 'Kirim Ulang Kode';
+
+  @override
+  String get activeStatus => 'Sedang Aktif';
+
+  @override
+  String get inactiveStatus => 'Tidak Aktif';
+
+  @override
+  String get predictionDataNotAvailable => 'Data prediksi tidak tersedia';
+
+  @override
+  String get energyPrediction => 'Prediksi Energi';
+
+  @override
+  String get dailyPrediction => 'Prediksi Harian';
+
+  @override
+  String get monthlyPrediction => 'Prediksi Bulanan';
+
+  @override
+  String get yearlyPrediction => 'Prediksi Tahunan';
+
+  @override
+  String get date => 'Tanggal';
+
+  @override
+  String get month => 'Bulan';
+
+  @override
+  String get year => 'Tahun';
+
+  @override
+  String get averagePowerW => 'Daya Rata2 (W)';
+
+  @override
+  String get totalEnergyKwh => 'Energi (kWh)';
+
+  @override
+  String get estimatedCost => 'Perkiraan Biaya';
+
+  @override
+  String get dailyPredictionTitle => 'Prediksi Harian (7 Hari Terakhir)';
+
+  @override
+  String get dateColumn => 'Tanggal';
+
+  @override
+  String get energyColumn => 'Energi (kWh)';
+
+  @override
+  String get costColumn => 'Biaya';
+
+  @override
+  String get currencySymbol => 'Rp';
+
+  @override
+  String get defaultValue => '-';
+
+  @override
+  String get currencyFormat => 'Rpamount';
+
+  @override
+  String get defaultDisplayText => '-';
+
+  @override
+  String get decimalFormat => 'value';
+
+  @override
+  String get voltage => 'Tegangan';
+
+  @override
+  String get current => 'Arus';
+
+  @override
+  String get power => 'Daya';
+
+  @override
+  String get energy => 'Energi';
+
+  @override
+  String get frequency => 'Frekuensi';
+
+  @override
+  String get powerFactor => 'Faktor Daya';
+
+  @override
+  String get temperature => 'Suhu';
+
+  @override
+  String get humidity => 'Kelembapan';
+
+  @override
+  String get voltageUnit => 'V';
+
+  @override
+  String get currentUnit => 'A';
+
+  @override
+  String get powerUnit => 'W';
+
+  @override
+  String get energyUnit => 'kWh';
+
+  @override
+  String get frequencyUnit => 'Hz';
+
+  @override
+  String get powerFactorUnit => 'VA';
+
+  @override
+  String get temperatureUnit => '°C';
+
+  @override
+  String get humidityUnit => '%';
+
+  @override
+  String get energyUsage => 'Penggunaan Energi';
+
+  @override
+  String get energyAxisLabel => 'Energi (kWh)';
+
+  @override
+  String get energySeriesName => 'Energi';
+
+  @override
+  String get avgDaily => 'Rata-rata Harian';
+
+  @override
+  String get peakToday => 'Puncak Hari Ini';
+
+  @override
+  String get energyToday => 'Energi Hari Ini';
+
+  @override
+  String get kilowatt => 'kW';
+
+  @override
+  String get kilowattHour => 'kWh';
+
+  @override
+  String get energyHistory => 'Riwayat Energi';
+
+  @override
+  String get energyConsumption => 'Konsumsi Energi';
+
+  @override
+  String get energyConsumptionDescription =>
+      'Lihat data historis konsumsi energi';
+
+  @override
+  String get energyConsumptionData => 'Data Konsumsi Energi';
+
+  @override
+  String get hours => 'Jam';
+
+  @override
+  String get selectDateRange => 'Pilih Rentang Tanggal';
+
+  @override
+  String get avgEnergy => 'Rata-rata Energi';
+
+  @override
+  String get peakPower => 'Daya Puncak';
+
+  @override
+  String get totalEnergy => 'Total Energi';
+
+  @override
+  String get watt => 'Watt';
+
+  @override
+  String get loadingEnergyData => 'Memuat data energi...';
+
+  @override
+  String get noEnergyData => 'Tidak Ada Data Energi';
+
+  @override
+  String get adjustDateRange =>
+      'Coba sesuaikan rentang tanggal atau periksa koneksi Anda';
+
+  @override
+  String get hourlyPowerConsumption => 'Konsumsi Daya Per Jam';
+
+  @override
+  String get time => 'Waktu';
+
+  @override
+  String get dataLoadFailed => 'Gagal memuat data';
+
+  @override
+  String get sendFailed => 'Gagal mengirim tautan reset';
+
+  @override
+  String get errorOccurred => 'Terjadi kesalahan';
 }

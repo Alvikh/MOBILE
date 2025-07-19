@@ -104,53 +104,58 @@ class EnergyAnalyticsService {
     }
   }
   Future<Map<String, dynamic>> getDataHistory(
-    String deviceId, {
-    DateTime? startDate,
-    DateTime? endDate,
-    String? interval,
-  }) async {
-    try {
-      // Build query parameters
-      final Map<String, dynamic> queryParams = {};
-      
-      if (startDate != null) {
-        queryParams['start_date'] = startDate.toIso8601String();
-      }
-      
-      if (endDate != null) {
-        queryParams['end_date'] = endDate.toIso8601String();
-      }
-      
-      if (interval != null) {
-        queryParams['interval'] = interval;
-      }
+  String deviceId, {
+  DateTime? startDate,
+  DateTime? endDate,
+  String? interval,
+}) async {
+  try {
+    // Build query parameters
+    final Map<String, dynamic> queryParams = {};
 
-      // Make the API request
-      final response = await _apiService.get(
-        '/device/$deviceId/consumption',
-        body: queryParams,
-      );
+    if (startDate != null) {
+      queryParams['start_date'] = startDate.toIso8601String();
+    }
 
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': response['data'],
-        };
-      } else {
-        throw ApiException(
-          message: response['message'] ?? 'Failed to fetch consumption data',
-          statusCode: response['statusCode'],
-        );
-      }
-    } on DioException catch (e) {
+    if (endDate != null) {
+      queryParams['end_date'] = endDate.toIso8601String();
+    }
+
+    if (interval != null) {
+      queryParams['interval'] = interval;
+    }
+
+    // ✅ Print log request
+    print("🔍 Request GET /energy/device/$deviceId/consumption");
+    print("Query Params: $queryParams");
+
+    // Make the API request
+    final response = await _apiService.get(
+      '/energy/device/$deviceId/consumption',
+      body: queryParams,
+    );
+
+    if (response['success'] == true) {
+      return {
+        'success': true,
+        'data': response['data'],
+      };
+    } else {
       throw ApiException(
-        message: e.response?.data['message'] ?? 'Network error occurred',
-        statusCode: e.response?.statusCode,
-      );
-    } catch (e) {
-      throw ApiException(
-        message: 'Unexpected error: $e',
+        message: response['message'] ?? 'Failed to fetch consumption data',
+        statusCode: response['statusCode'],
       );
     }
+  } on DioException catch (e) {
+    throw ApiException(
+      message: e.response?.data['message'] ?? 'Network error occurred',
+      statusCode: e.response?.statusCode,
+    );
+  } catch (e) {
+    throw ApiException(
+      message: 'Unexpected error: $e',
+    );
   }
+}
+
 }
