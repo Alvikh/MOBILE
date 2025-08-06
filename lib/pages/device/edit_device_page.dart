@@ -28,8 +28,8 @@ class _EditDevicePageState extends ConsumerState<EditDevicePage> {
   late final TextEditingController _typeController;
 
   static const List<String> _deviceTypes = [
-    'Monitoring Device',
-    'Control Device',
+    'monitoring',
+    'control',
   ];
 
   static const List<String> _statusOptions = [

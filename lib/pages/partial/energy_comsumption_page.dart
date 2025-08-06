@@ -317,12 +317,14 @@ class _EnergyConsumptionPageState extends State<EnergyConsumptionPage> {
                 children: [
                   Icon(icon, size: 20, color: const Color(0xFF0A5099)),
                   const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                      fontFamily: 'Poppins',
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ),
                 ],

@@ -166,7 +166,7 @@ class _AccountPageState extends State<AccountPage> with SingleTickerProviderStat
                                               : User().profilePhotoPath != null
                                                   ? ClipOval(
                                                       child: Image.network(
-                                                        "${ApiService().url}${User().profilePhotoPath.toString()}",
+                                                        "${ApiService().url}/${User().profilePhotoPath.toString()}",
                                                         width: 95,
                                                         height: 95,
                                                         fit: BoxFit.cover,
@@ -215,6 +215,7 @@ class _AccountPageState extends State<AccountPage> with SingleTickerProviderStat
                                   ),
                                 ],
                               ),
+                              
                               const SizedBox(height: 15),
                               Text(
                                 User().name ?? s.nameLabel,

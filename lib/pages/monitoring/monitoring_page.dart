@@ -18,7 +18,13 @@ class MonitoringPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<MonitoringPage> createState() => _MonitoringPageState();
 }
+// Helper class for chart data
+class ChartData {
+  final String label;
+  final double value;
 
+  ChartData({required this.label, required this.value});
+}
 class _MonitoringPageState extends ConsumerState<MonitoringPage> {
   late MqttService mqttService;
   String tanggal = '-';
@@ -34,10 +40,14 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
   DeviceData? device;
   int currentDeviceIndex = 0;
   late List<Device> monitoringDevices;
+bool _showLoadingPopup = false;
+bool _showErrorPopup = false;
 
   final Map<String, Map<String, List<double>>> chartData = {};
   final Map<String, Map<String, List<DateTime>>> timestamps = {};
   final Map<String, List<Map<String, dynamic>>> energyHistory = {};
+final Map<String, Map<String, dynamic>> deviceEnergyHistory = {};
+final Map<String, List<Map<String, dynamic>>> deviceEnergyRecords = {};
 
   String selectedPeriod = 'Daily';
   final List<String> periodOptions = ['Daily', 'Weekly', 'Monthly', 'Yearly'];
@@ -58,15 +68,23 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
   @override
   void initState() {
     super.initState();
+    
     _initializeData();
     _initializeMqttService();
     _fetchInitialData();
   }
-
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  final locale = Localizations.localeOf(context);
+  // Initialize your formatters here
+}
   void _initializeData() {
     monitoringDevices =
         User().devices.where((device) => device.type == 'monitoring').toList();
-
+  if (monitoringDevices.isEmpty) {
+    return;
+  }
     for (var device in monitoringDevices) {
       chartData[device.deviceId] = {
         'Voltage': [],
@@ -117,7 +135,9 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
 
     setState(() {
       _isLoading = true;
+      _showLoadingPopup = true;
       _errorMessage = '';
+      _showErrorPopup = false;
     });
 
     try {
@@ -148,29 +168,79 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
         _energyHistory = results['data']['energy_history'] ?? {};
         _metrics = results['data']['metrics'] ?? {};
 
+        print("history $_energyHistory");
         print("record isss $_predictionData");
 
         // Process energy history
-        if (_energyHistory['records'] != null) {
-          energyHistory[deviceId] = List<Map<String, dynamic>>.from(
-            (_energyHistory['records'] as List).map((record) {
-              final recordMap = record as Map<String, dynamic>;
-              final energyVal =
-                  double.tryParse(recordMap['energy'].toString()) ?? 0.0;
-              final avgPowerVal =
-                  double.tryParse(recordMap['avg_power'].toString()) ?? 0.0;
+        // if (_energyHistory['records'] != null) {
+        //   energyHistory[deviceId] = List<Map<String, dynamic>>.from(
+        //     (_energyHistory['records'] as List).map((record) {
+        //       final recordMap = record as Map<String, dynamic>;
+        //       final energyVal =
+        //           double.tryParse(recordMap['energy'].toString()) ?? 0.0;
+        //       final avgPowerVal =
+        //           double.tryParse(recordMap['avg_power'].toString()) ?? 0.0;
 
-              return {
-                'date': DateTime.tryParse(recordMap['date']) ?? DateTime.now(),
-                'energy': energyVal / 1000,
-                'cost': energyVal * 1444.70 / 1000,
-                'duration': recordMap['duration'],
-                'avg_power': avgPowerVal,
-              };
-            }).toList(),
-          );
-        }
-
+        //       return {
+        //         'date': DateTime.tryParse(recordMap['date']) ?? DateTime.now(),
+        //         'energy': energyVal / 1000,
+        //         'cost': energyVal * 1444.70 / 1000,
+        //         'duration': recordMap['duration'],
+        //         'avg_power': avgPowerVal,
+        //       };
+        //     }).toList(),
+        //   );
+        // }
+if (_energyHistory != null) {
+  final historyData = _energyHistory;
+  final labels = historyData['labels'] as List;
+  final data = historyData['data'] as List;
+print(historyData);
+print(labels);
+print(data);
+  // Option 1: Keep original Map format
+//   final s = AppLocalizations.of(context)!;
+// final locale = Localizations.localeOf(context);
+deviceEnergyHistory[deviceId] = {
+  'labels': List<String>.from(labels),
+  'data': List<double>.from(data.map((v) => double.tryParse(v.toString()) ?? 0.0)),
+  'cost_data': List<String>.from(data.map((v) {
+    final energy = double.tryParse(v.toString()) ?? 0.0;
+    final costValue = energy * 1444.70 / 1000;
+    return costValue.toString(); // tanpa NumberFormat
+  })),
+  'cost_values': List<double>.from(data.map((v) {
+    final energy = double.tryParse(v.toString()) ?? 0.0;
+    return energy * 1444.70 / 1000;
+  })),
+};
+// deviceEnergyHistory[deviceId] = {
+//   'labels': List<String>.from(labels),
+//   'data': List<double>.from(data.map((v) => double.tryParse(v.toString()) ?? 0.0)),
+//   'cost_data': List<String>.from(data.map((v) {
+//     final energy = double.tryParse(v.toString()) ?? 0.0;
+//     final costValue = energy * 1444.70 / 1000;
+//     return NumberFormat("#,##0", locale.toString()).format(costValue);
+//   })),
+//   'cost_values': List<double>.from(data.map((v) {
+//     final energy = double.tryParse(v.toString()) ?? 0.0;
+//     return energy * 1444.70 / 1000;
+//   })),
+// };
+print(deviceEnergyHistory[deviceId]);
+  // Option 2: Convert to List<Map> format
+  deviceEnergyRecords[deviceId] = List<Map<String, dynamic>>.generate(
+    labels.length,
+    (index) {
+      final energyValue = double.tryParse(data[index].toString()) ?? 0.0;
+      return {
+        'date': labels[index],
+        'energy': energyValue / 1000,
+        'cost': energyValue * 1444.70 / 1000,
+      };
+    },
+  );
+}
         // Process daily consumption
         if (_consumptionHistory['daily'] != null) {
           final daily = _consumptionHistory['daily'];
@@ -190,12 +260,14 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
     } catch (e) {
       print('❌ Failed to load data: $e');
       setState(() {
-        _errorMessage = 'Failed to load data: $e';
-      });
+      _errorMessage = 'Failed to load data: $e';
+      _showErrorPopup = true;
+    });
     } finally {
       setState(() {
-        _isLoading = false;
-      });
+      _isLoading = false;
+      _showLoadingPopup = false; // Sembunyikan popup loading
+    });
     }
   }
 
@@ -635,14 +707,18 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
   final s = AppLocalizations.of(context)!;
   final locale = Localizations.localeOf(context);
 
-  String formatCurrency(num value) {
-    final formattedAmount = NumberFormat("#,##0", locale.toString()).format(value);
-    if (s.currencyFormat.contains('amount')) {
-      return s.currencyFormat.replaceAll('amount', formattedAmount);
-    }
-    return '$formattedAmount ${s.currencyFormat}';
+String formatCurrency(num value) {
+  final formattedAmount = NumberFormat("#,##0", locale.toString()).format(value);
+  
+  if (s.currencyFormat.contains('amount')) {
+    return s.currencyFormat
+      .replaceAll('amount', formattedAmount)
+      .replaceAll(r'\$', '\$'); // Unescape the dollar sign
   }
-
+  
+  // Default case with dollar sign
+  return '\$$formattedAmount'; 
+}
   String formatDecimal(num value) {
     return s.decimalFormat.replaceAll('value', value.toStringAsFixed(2));
   }
@@ -739,10 +815,11 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                     children: [
                       Column(
                         children: [
-                          _buildHeader(
+                          hasMonitoringDevice
+                                ? _buildHeader(
                               s,
                               (monitoringDevices[currentDeviceIndex].id)
-                                  .toString()),
+                                  .toString()):_buildHeader(s,""),
                           Container(
                             margin: const EdgeInsets.all(10),
                             padding: const EdgeInsets.all(20),
@@ -759,10 +836,10 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                                       if (_isLoading)
                                         const Center(
                                             child: CircularProgressIndicator()),
-                                      if (_errorMessage.isNotEmpty)
-                                        Text(_errorMessage,
-                                            style: const TextStyle(
-                                                color: Colors.red)),
+                                      // if (_errorMessage.isNotEmpty)
+                                      //   Text(_errorMessage,
+                                      //       style: const TextStyle(
+                                      //           color: Colors.red)),
                                       const SizedBox(height: 15),
                                       Text(
                                         s.monitorLiveTitle,
@@ -779,7 +856,7 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                                       const SizedBox(height: 20),
                                       _buildEnergyUsageChart(context),
                                       const SizedBox(height: 20),
-                                      _buildEnergyHistorySection(s),
+                                      _buildEnergyHistorySection(s,context),
                                       const SizedBox(height: 20),
                                       _buildPredictionSection(),
                                     ],
@@ -789,21 +866,20 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                         ],
                       ),
                       if (hasMonitoringDevice)
-                        (monitoringDevices.length <= 1)
+                        (monitoringDevices.length <= 2)
                             ? Positioned(
-                                top: 400,
+                                top: MediaQuery.of(context).size.height / 2 - 10,
                                 left: 0,
                                 right: 0,
                                 child: Container(
-                                  // Hilangkan margin horizontal untuk full width
                                   height:
-                                      130, // Sesuaikan dengan tinggi _buildLiveDataScroll()
+                                      130,
                                   child:
                                       _buildLiveDataScroll(context), // Fungsi baru untuk full width
                                 ),
                               )
                             : Positioned(
-                                top: 490,
+                                top: MediaQuery.of(context).size.height / 2 - 10,
                                 left: 0,
                                 right: 0,
                                 child: Container(
@@ -824,7 +900,48 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
       ),
     );
   }
+  
+void _showLoadingDialog() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading data...'),
+          ],
+        ),
+      );
+    },
+  );
+}
 
+void _showErrorDialog() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Error'),
+        content: Text(_errorMessage),
+        actions: [
+          TextButton(
+            child: Text('Close'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              setState(() {
+                _showErrorPopup = false;
+              });
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
   Widget _buildHeader(AppLocalizations s, String id) {
     return SafeArea(
       child: Container(
@@ -1147,7 +1264,18 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
  Widget _buildEnergyUsageChart(BuildContext context) {
   final s = AppLocalizations.of(context)!;
   final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
-  final filteredData = _getFilteredHistoryData(deviceId);
+  final energyData = deviceEnergyHistory[deviceId] ?? {'labels': [], 'data': []};
+  final labels = (energyData['labels'] as List).cast<String>();
+  final dataValues = (energyData['data'] as List).map((v) => double.tryParse(v.toString()) ?? 0.0).toList();
+
+  // Create chart data points
+  final List<ChartData> chartData = List.generate(
+    labels.length,
+    (index) => ChartData(
+      label: labels[index],
+      value: index < dataValues.length ? dataValues[index] / 1000 : 0.0,
+    ),
+  );
 
   return Card(
     elevation: 2,
@@ -1178,11 +1306,11 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
                 title: AxisTitle(text: s.energyAxisLabel),
                 numberFormat: NumberFormat.compact(),
               ),
-              series: <CartesianSeries>[
-                ColumnSeries<Map<String, dynamic>, String>(
-                  dataSource: filteredData,
-                  xValueMapper: (data, _) => _formatDate(data['date']),
-                  yValueMapper: (data, _) => data['energy'],
+              series: <CartesianSeries<ChartData, String>>[
+                ColumnSeries<ChartData, String>(
+                  dataSource: chartData,
+                  xValueMapper: (ChartData data, _) => data.label,
+                  yValueMapper: (ChartData data, _) => data.value,
                   name: s.energySeriesName,
                   color: const Color(0xFF0A5099),
                   dataLabelSettings: const DataLabelSettings(
@@ -1202,23 +1330,25 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
   );
 }
 
+
+
   Widget _buildUsageMetrics(BuildContext context) {
   final s = AppLocalizations.of(context)!;
-  
+  print(_metrics);
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
     children: [
       _buildMetricTile(
         s.avgDaily,
-        '${(_metrics['avg_daily_power'] as num?)?.toStringAsFixed(2) ?? '0.00'} ${s.kilowatt}',
+        '${(_metrics['avg_daily_energy'] as num?)?.toStringAsFixed(2) ?? '0.00'} ${s.kilowatt}',
       ),
       _buildMetricTile(
         s.peakToday,
-        '${(_metrics['peak_power_today'] as num?)?.toStringAsFixed(2) ?? '0.00'} ${s.kilowatt}',
+        '${(_metrics['peak_power'] as num?)?.toStringAsFixed(2) ?? '0.00'} ${s.kilowatt}',
       ),
       _buildMetricTile(
         s.energyToday,
-        '${((_metrics['energy_today'] ?? 0) / 1000).toStringAsFixed(2)} ${s.kilowattHour}',
+        '${((_metrics['total_energy'] ?? 0) / 1000).toStringAsFixed(2)} ${s.kilowattHour}',
       ),
     ],
   );
@@ -1245,9 +1375,15 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
     );
   }
 
-  Widget _buildEnergyHistorySection(AppLocalizations s) {
+ Widget _buildEnergyHistorySection(AppLocalizations s, BuildContext context) {
   final deviceId = monitoringDevices[currentDeviceIndex].deviceId;
-  final filteredData = _getFilteredHistoryData(deviceId);
+  final energyData = deviceEnergyRecords[deviceId] ?? [];
+  final locale = Localizations.localeOf(context);
+  final currencyFormat = NumberFormat.currency(
+    locale: locale.toString(),
+    symbol: s.currencySymbol,
+    decimalDigits: 2,
+  );
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1271,54 +1407,93 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
           padding: const EdgeInsets.all(15),
           child: Column(
             children: [
-              Row(
+              // Table Header
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    s.date,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'Date',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  Text(
-                    '${s.energy} (${s.kilowattHour})',
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'Energy (kWh)',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Cost',
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              ...filteredData.map((entry) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _formatDate(entry['date']),
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                      Text(
-                        entry['energy'].toStringAsFixed(2),
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                      Text(
-                        "",
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ],
+              
+              // Data Rows
+              if (energyData.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'No data available',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      color: Colors.grey[600],
+                    ),
                   ),
-                );
-              }).toList(),
+                )
+              else
+                ...energyData.map((entry) {
+                  final cost = entry['cost'] as double;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            entry['date'].toString(),
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            (entry['energy'] as double).toStringAsFixed(2),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            currencyFormat.format(cost), // Formatted cost
+                            textAlign: TextAlign.end,
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
             ],
           ),
         ),
@@ -1326,7 +1501,6 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
     ],
   );
 }
-
   List<Map<String, dynamic>> _getFilteredHistoryData(String deviceId) {
     final now = DateTime.now();
     final history = energyHistory[deviceId] ?? [];
@@ -1424,9 +1598,4 @@ class _MonitoringPageState extends ConsumerState<MonitoringPage> {
   }
 }
 
-class ChartData {
-  final DateTime time;
-  final double value;
 
-  ChartData(this.time, this.value);
-}

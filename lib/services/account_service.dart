@@ -258,9 +258,9 @@ class AccountService {
   }) async {
     try {
       final response = await ApiService().put('/profile/password', {
-        'current_password': currentPassword,
-        'new_password': newPassword,
-        'new_password_confirmation': newPasswordConfirmation,
+        'current_password': currentPassword.trim(),
+        'new_password': newPassword.trim(),
+        'new_password_confirmation': newPasswordConfirmation.trim(),
       });
 
       if (response['success'] == true) {
