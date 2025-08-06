@@ -636,7 +636,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get defaultValue => '-';
 
   @override
-  String get currencyFormat => '\\\$amount';
+  String get currencyFormat => 'Rpamount';
 
   @override
   String get defaultDisplayText => '-';
@@ -798,4 +798,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refresh => 'Refresh';
+
+  @override
+  String get saveChangesButton => 'Save Changes';
 }

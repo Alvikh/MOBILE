@@ -800,4 +800,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get refresh => 'Segarkan';
+
+  @override
+  String get saveChangesButton => 'Simpan Perubahan';
 }

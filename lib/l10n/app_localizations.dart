@@ -1283,7 +1283,7 @@ abstract class AppLocalizations {
   /// No description provided for @currencyFormat.
   ///
   /// In en, this message translates to:
-  /// **'\\\$amount'**
+  /// **'Rpamount'**
   String get currencyFormat;
 
   /// No description provided for @defaultDisplayText.
@@ -1591,6 +1591,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refresh'**
   String get refresh;
+
+  /// No description provided for @saveChangesButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChangesButton;
 }
 
 class _AppLocalizationsDelegate

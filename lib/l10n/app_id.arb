@@ -324,5 +324,9 @@
   "statusMaintenance": "Pemeliharaan",
     "deleteDeviceMessage": "Are you sure you want to delete {deviceName}?",
   "deviceDeleted": "{deviceName} deleted successfully",
-  "deleteFailed": "Failed to delete device: {error}"
+  "deleteFailed": "Failed to delete device: {error}",
+  "editDeviceTitle": "Edit Perangkat",
+  "saveChangesButton": "Simpan Perubahan",
+  "deviceUpdatedSuccess": "Perangkat berhasil diperbarui",
+  "deviceStatusLabel": "Status"
 }

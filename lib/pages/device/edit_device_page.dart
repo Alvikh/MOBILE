@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ta_mobile/l10n/app_localizations.dart';
 import 'package:ta_mobile/models/device.dart';
 import 'package:ta_mobile/services/device_service.dart';
 import 'package:ta_mobile/widgets/custom_text_field.dart';
@@ -23,40 +24,20 @@ class _EditDevicePageState extends ConsumerState<EditDevicePage> {
   late String _status;
   bool _isLoading = false;
 
-  // Using late initialization for type controller to ensure dropdown value exists
-  late final String _selectedType;
   late final TextEditingController _typeController;
 
-  static const List<String> _deviceTypes = [
-    'monitoring',
-    'control',
-  ];
-
-  static const List<String> _statusOptions = [
-    'active',
-    'inactive',
-    'maintenance',
-  ];
+  static const List<String> _deviceTypes = ['monitoring', 'control'];
+  static const List<String> _statusOptions = ['active', 'inactive', 'maintenance'];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.device.name);
     _deviceIdController = TextEditingController(text: widget.device.deviceId);
-
-    // Ensure the initial type exists in our dropdown options
-    _selectedType = _deviceTypes.contains(widget.device.type)
-        ? widget.device.type
-        : _deviceTypes.first;
-    _typeController = TextEditingController(text: _selectedType);
-
+    _typeController = TextEditingController(text: widget.device.type);
     _buildingController = TextEditingController(text: widget.device.building);
     _installationDate = widget.device.installationDate;
-
-    // Ensure the initial status exists in our options
-    _status = _statusOptions.contains(widget.device.status)
-        ? widget.device.status
-        : 'active';
+    _status = widget.device.status;
   }
 
   @override
@@ -74,6 +55,23 @@ class _EditDevicePageState extends ConsumerState<EditDevicePage> {
       initialDate: _installationDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF0A5099),
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF0A5099),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _installationDate) {
       setState(() => _installationDate = picked);
@@ -81,10 +79,22 @@ class _EditDevicePageState extends ConsumerState<EditDevicePage> {
   }
 
   Future<void> _submitForm() async {
+    final s = AppLocalizations.of(context)!;
+
     if (!_formKey.currentState!.validate()) return;
     if (_installationDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap pilih tanggal instalasi')),
+        SnackBar(
+          content: Text(
+            s.pleaseSelectInstallationDate,
+            style: const TextStyle(fontFamily: 'Poppins'),
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
       return;
     }
@@ -106,14 +116,34 @@ class _EditDevicePageState extends ConsumerState<EditDevicePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perangkat berhasil diperbarui')),
+          SnackBar(
+            content: Text(
+              s.deviceUpdatedSuccess,
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         );
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memperbarui: ${e.toString()}')),
+          SnackBar(
+            content: Text(
+              s.error.replaceFirst('{error}', e.toString()),
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         );
       }
     } finally {
@@ -123,124 +153,274 @@ class _EditDevicePageState extends ConsumerState<EditDevicePage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context)!;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F9),
       appBar: AppBar(
-        title: const Text('Edit Perangkat'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _isLoading ? null : _submitForm,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          s.editDeviceTitle,
+          style: const TextStyle(
+            color: Colors.white,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: const Color(0xFF0A5099),
+      ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          CustomTextField(
+                            label: s.deviceNameLabel,
+                            controller: _nameController,
+                            prefixIcon: Icons.devices_other,
+                            iconColor: const Color(0xFF0A5099),
+                          ),
+                          const SizedBox(height: 20),
+                          CustomTextField(
+                            label: s.deviceIdLabel,
+                            controller: _deviceIdController,
+                            prefixIcon: Icons.confirmation_number,
+                            iconColor: const Color(0xFF0A5099),
+                          ),
+                          const SizedBox(height: 20),
+                          DropdownButtonFormField<String>(
+                            value: _typeController.text,
+                            items: _deviceTypes.map((value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(
+                                  value.capitalize(),
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) => setState(() {
+                              if (value != null) _typeController.text = value;
+                            }),
+                            decoration: InputDecoration(
+                              labelText: s.deviceTypeLabel,
+                              labelStyle: const TextStyle(
+                                fontFamily: 'Poppins',
+                                color: Colors.grey,
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.category,
+                                color: Color(0xFF0A5099),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(color: Colors.grey),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(color: Colors.grey),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF0A5099),
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 15,
+                                horizontal: 15,
+                              ),
+                            ),
+                            dropdownColor: Colors.white,
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Colors.black,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return s.pleaseSelectDeviceType;
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          CustomTextField(
+                            label: s.deviceBuildingLabel,
+                            controller: _buildingController,
+                            prefixIcon: Icons.location_city,
+                            iconColor: const Color(0xFF0A5099),
+                          ),
+                          const SizedBox(height: 20),
+                          InkWell(
+                            onTap: () => _selectDate(context),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: s.installationDateLabel,
+                                labelStyle: const TextStyle(
+                                  fontFamily: 'Poppins',
+                                  color: Colors.grey,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.calendar_today,
+                                  color: Color(0xFF0A5099),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Colors.grey),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Colors.grey),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF0A5099),
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 15,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    _installationDate == null
+                                        ? s.selectDateText
+                                        : DateFormat('yyyy-MM-dd')
+                                            .format(_installationDate!),
+                                    style: const TextStyle(fontFamily: 'Poppins'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          DropdownButtonFormField<String>(
+                            value: _status,
+                            items: _statusOptions.map((value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(
+                                  value.capitalize(),
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) => setState(() {
+                              if (value != null) _status = value;
+                            }),
+                            decoration: InputDecoration(
+                              labelText: s.deviceStatusLabel,
+                              labelStyle: const TextStyle(
+                                fontFamily: 'Poppins',
+                                color: Colors.grey,
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.info_outline,
+                                color: Color(0xFF0A5099),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(color: Colors.grey),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(color: Colors.grey),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF0A5099),
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 15,
+                                horizontal: 15,
+                              ),
+                            ),
+                            dropdownColor: Colors.white,
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _submitForm,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0A5099),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              s.saveChangesButton,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              CustomTextField(
-                label: 'Nama Perangkat',
-                controller: _nameController,
-              ),
-              const SizedBox(height: 20),
-              CustomTextField(
-                label: 'ID Perangkat',
-                controller: _deviceIdController,
-              ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                value: _typeController.text,
-                items: _deviceTypes.map((type) {
-                  return DropdownMenuItem<String>(
-                    value: type,
-                    child: Text(type),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _typeController.text = value;
-                    });
-                  }
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Tipe Perangkat',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Pilih tipe perangkat';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              CustomTextField(
-                label: 'Gedung',
-                controller: _buildingController,
-              ),
-              const SizedBox(height: 20),
-              InkWell(
-                onTap: () => _selectDate(context),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Instalasi',
-                    border: OutlineInputBorder(),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _installationDate == null
-                            ? 'Pilih Tanggal'
-                            : DateFormat('dd/MM/yyyy')
-                                .format(_installationDate!),
-                      ),
-                      const Icon(Icons.calendar_today),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                value: _status,
-                items: _statusOptions.map((status) {
-                  return DropdownMenuItem<String>(
-                    value: status,
-                    child: Text(status.toUpperCase()),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _status = value);
-                  }
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Status',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  onPressed: _isLoading ? null : _submitForm,
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text(
-                          'SIMPAN PERUBAHAN',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }

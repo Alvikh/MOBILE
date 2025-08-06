@@ -253,7 +253,7 @@
   "costColumn": "Cost",
   "currencySymbol": "Rp",
   "defaultValue": "-",
-   "currencyFormat": "\\$amount",
+   "currencyFormat": "Rpamount",
   "defaultDisplayText": "-",
   "decimalFormat": "value",
    "voltage": "Voltage",
@@ -323,5 +323,9 @@
   "statusMaintenance": "Maintenance",
   "deleteDeviceMessage": "Apakah Anda yakin ingin menghapus {deviceName}?",
   "deviceDeleted": "{deviceName} berhasil dihapus",
-  "deleteFailed": "Gagal menghapus perangkat: {error}"
+  "deleteFailed": "Gagal menghapus perangkat: {error}",
+  "editDeviceTitle": "Edit Device",
+  "saveChangesButton": "Save Changes",
+  "deviceUpdatedSuccess": "Device updated successfully",
+  "deviceStatusLabel": "Status"
 }
